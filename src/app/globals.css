@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --muted: #6b7280;
+  --primary: #13664f;
+  --primary-dark: #0f5240;
+  --beige: #f2efe9;
+  --blue-soft: #ebf2f9;
+  --orange-soft: #f9efe2;
+  --green-soft: #e8f5e9;
+  --purple-soft: #ede7f6;
+  --mint: #dceee6;
+  --mint-hero: #c8e6d9;
+  --border: #eceae6;
+  --radius: 16px;
+  --radius-lg: 20px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-beige: var(--beige);
+  --color-blue-soft: var(--blue-soft);
+  --color-orange-soft: var(--orange-soft);
+  --color-green-soft: var(--green-soft);
+  --color-mint: var(--mint);
+  --color-mint-hero: var(--mint-hero);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
