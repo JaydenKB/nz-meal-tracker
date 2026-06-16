@@ -53,6 +53,15 @@ export async function updateAppSettings(data: Partial<AppSettings>) {
     .set({
       ollamaBaseUrl: data.ollamaBaseUrl ?? current.ollamaBaseUrl,
       ollamaModel: data.ollamaModel ?? current.ollamaModel,
+      ollamaVisionModel: data.ollamaVisionModel ?? current.ollamaVisionModel,
+      aiProvider: data.aiProvider ?? current.aiProvider,
+      openaiApiKey:
+        data.openaiApiKey !== undefined ? data.openaiApiKey : current.openaiApiKey,
+      openaiTextModel: data.openaiTextModel ?? current.openaiTextModel,
+      openaiVisionModel: data.openaiVisionModel ?? current.openaiVisionModel,
+      anthropicApiKey:
+        data.anthropicApiKey !== undefined ? data.anthropicApiKey : current.anthropicApiKey,
+      anthropicTextModel: data.anthropicTextModel ?? current.anthropicTextModel,
     })
     .where(eq(appSettings.id, current.id));
   return getAppSettings();

@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CheckSquare, Square } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
 import { PrintButton } from "@/components/ui/print-button";
 import { SoftPanel } from "@/components/ui/card";
 import { getBatchWithShoppingList } from "@/lib/queries";
@@ -19,11 +19,21 @@ export default async function BatchPage({
   const { batch, recipe, costSummary } = data;
 
   return (
-    <div className="space-y-5 pb-4 print:space-y-4">
-      <PageHeader
-        title="Shopping list"
-        subtitle={`${recipe.name} · ${batch.multiplier}× batch`}
-      />
+    <div className="mx-auto max-w-[430px] space-y-5 pb-4 print:space-y-4">
+      <header className="flex items-center gap-3">
+        <Link
+          href="/shop"
+          className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div>
+          <h1 className="text-[1.75rem] font-medium">Shopping list</h1>
+          <p className="text-sm text-[var(--muted)]">
+            {recipe.name} · {batch.multiplier}× batch
+          </p>
+        </div>
+      </header>
 
       {costSummary.groups.map((group) => (
         <section key={group.storeName} className="space-y-2">

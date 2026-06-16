@@ -2,23 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Home, Leaf, PlusSquare, Store } from "lucide-react";
+import { BookOpen, CalendarDays, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/today", label: "Today", icon: ClipboardList },
-  { href: "/", label: "Home", icon: Home },
-  { href: "/recipes/new", label: "New", icon: PlusSquare },
-  { href: "/ingredients", label: "Ingredients", icon: Leaf },
-  { href: "/stores", label: "Stores", icon: Store },
+  { href: "/", label: "Today", icon: CalendarDays },
+  { href: "/recipes", label: "Recipes", icon: BookOpen },
+  { href: "/shop", label: "Shop", icon: ShoppingBag },
 ];
+
+const TAB_ROOTS = new Set(["/", "/recipes", "/shop"]);
+
+export function useShowBottomNav() {
+  const pathname = usePathname();
+  return TAB_ROOTS.has(pathname);
+}
 
 export function BottomNav() {
   const pathname = usePathname();
 
+  if (!TAB_ROOTS.has(pathname)) return null;
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-white">
-      <div className="mx-auto flex max-w-[430px] items-center justify-around px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-white pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex max-w-[430px] items-stretch justify-around px-2 pt-2">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active =
             href === "/"
@@ -30,12 +37,12 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-xl px-2 py-1 transition-colors",
+                "flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius)] py-2 transition-colors",
                 active ? "text-[var(--primary)]" : "text-[var(--muted)]",
               )}
-              aria-label={label}
             >
               <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
+              <span className="text-[11px] font-medium">{label}</span>
             </Link>
           );
         })}

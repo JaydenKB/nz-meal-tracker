@@ -1,5 +1,5 @@
-import { TodayPageClient } from "@/components/today/today-page";
+import { redirect } from "next/navigation";
 
-export default function TodayPage() {
-  return <TodayPageClient />;
+export default function TodayRedirect() {
+  redirect("/");
 }

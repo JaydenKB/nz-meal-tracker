@@ -10,13 +10,36 @@ import {
 } from "@/lib/db/schema";
 import {
   calculateLineMacros,
+  calculateLineNutrients,
   perServing,
+  perServingNutrients,
   roundMacros,
   sumMacros,
+  sumNutrients,
 } from "@/lib/nutrition/calculate";
 import { calculateHealthScore } from "@/lib/nutrition/healthScore";
+import type { ExtendedNutrients } from "@/lib/nutrition/nutrients";
 import { buildShoppingList } from "@/lib/shopping/buildList";
 import { buildShoppingCostSummary } from "@/lib/cost/estimate";
+
+export async function getAllRecipesWithSummary() {
+  const all = await db.select().from(recipes).orderBy(desc(recipes.createdAt));
+  return Promise.all(
+    all.map(async (recipe) => {
+      const details = await getRecipeWithDetails(recipe.id);
+      return {
+        recipe,
+        kcal: details?.perServing.calories ?? 0,
+        proteinG: details?.perServing.proteinG ?? 0,
+        score: details?.healthScore.score ?? 0,
+      };
+    }),
+  );
+}
+
+export async function getLatestBatch() {
+  return db.select().from(batches).orderBy(desc(batches.createdAt)).limit(1).get();
+}
 
 export async function getRecentRecipesWithSummary(limit = 10) {
   const recent = await db.select().from(recipes).orderBy(desc(recipes.createdAt)).limit(limit);
@@ -72,14 +95,25 @@ export async function getRecipeWithDetails(id: number) {
     }),
   );
 
+  const lineNutrients = lines.map((line) =>
+    calculateLineNutrients({
+      quantity: line.recipe_ingredients.quantity,
+      unit: line.recipe_ingredients.unit,
+      ingredient: line.ingredients,
+    }),
+  );
+
   const total = roundMacros(sumMacros(lineMacros));
   const perServingMacros = roundMacros(perServing(total, recipe.servings));
+  const totalNutrients = sumNutrients(lineNutrients);
+  const perServingExtended = perServingNutrients(totalNutrients, recipe.servings);
 
   const processedCount = lines.filter((l) => l.ingredients.isProcessed).length;
   const healthScore = calculateHealthScore(
     perServingMacros,
     processedCount,
     lines.length,
+    perServingExtended,
   );
 
   return {
@@ -92,6 +126,7 @@ export async function getRecipeWithDetails(id: number) {
     })),
     total,
     perServing: perServingMacros,
+    perServingNutrients: perServingExtended,
     healthScore,
   };
 }

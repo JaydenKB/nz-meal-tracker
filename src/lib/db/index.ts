@@ -97,6 +97,109 @@ export function initDb() {
       "INSERT INTO app_settings (ollama_base_url, ollama_model) VALUES ('http://localhost:11434', 'qwen2.5')",
     ).run();
   }
+
+  migrateRecipesOrigin();
+  migrateAppSettingsVisionModel();
+  migrateAppSettingsTextModel();
+  migrateAppSettingsOpenAI();
+  migrateAppSettingsAnthropic();
+  migrateIngredientNutrients();
+}
+
+function migrateAppSettingsTextModel() {
+  sqlite
+    .prepare(
+      "UPDATE app_settings SET ollama_model = 'qwen2.5:7b' WHERE ollama_model IN ('qwen2.5', 'qwen2.5:3b')",
+    )
+    .run();
+}
+
+function migrateIngredientNutrients() {
+  const cols = sqlite.prepare("PRAGMA table_info(ingredients)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "nutrients_json")) {
+    try {
+      sqlite.exec("ALTER TABLE ingredients ADD COLUMN nutrients_json TEXT");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  }
+  if (!cols.some((c) => c.name === "nutrition_source")) {
+    try {
+      sqlite.exec("ALTER TABLE ingredients ADD COLUMN nutrition_source TEXT");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  }
+}
+
+function migrateAppSettingsVisionModel() {
+  const cols = sqlite.prepare("PRAGMA table_info(app_settings)").all() as { name: string }[];
+  if (cols.some((c) => c.name === "ollama_vision_model")) return;
+  try {
+    sqlite.exec(
+      "ALTER TABLE app_settings ADD COLUMN ollama_vision_model TEXT NOT NULL DEFAULT 'qwen2.5vl:3b'",
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("duplicate column")) throw error;
+  }
+}
+
+function migrateAppSettingsOpenAI() {
+  const cols = sqlite.prepare("PRAGMA table_info(app_settings)").all() as { name: string }[];
+  const add = (sql: string) => {
+    try {
+      sqlite.exec(sql);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  };
+  if (!cols.some((c) => c.name === "ai_provider")) {
+    add("ALTER TABLE app_settings ADD COLUMN ai_provider TEXT NOT NULL DEFAULT 'local'");
+  }
+  if (!cols.some((c) => c.name === "openai_api_key")) {
+    add("ALTER TABLE app_settings ADD COLUMN openai_api_key TEXT");
+  }
+  if (!cols.some((c) => c.name === "openai_text_model")) {
+    add("ALTER TABLE app_settings ADD COLUMN openai_text_model TEXT NOT NULL DEFAULT 'gpt-4o-mini'");
+  }
+  if (!cols.some((c) => c.name === "openai_vision_model")) {
+    add("ALTER TABLE app_settings ADD COLUMN openai_vision_model TEXT NOT NULL DEFAULT 'gpt-4o'");
+  }
+}
+
+function migrateAppSettingsAnthropic() {
+  const cols = sqlite.prepare("PRAGMA table_info(app_settings)").all() as { name: string }[];
+  const add = (sql: string) => {
+    try {
+      sqlite.exec(sql);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  };
+  if (!cols.some((c) => c.name === "anthropic_api_key")) {
+    add("ALTER TABLE app_settings ADD COLUMN anthropic_api_key TEXT");
+  }
+  if (!cols.some((c) => c.name === "anthropic_text_model")) {
+    add(
+      "ALTER TABLE app_settings ADD COLUMN anthropic_text_model TEXT NOT NULL DEFAULT 'claude-sonnet-4-20250514'",
+    );
+  }
+}
+
+function migrateRecipesOrigin() {
+  const cols = sqlite.prepare("PRAGMA table_info(recipes)").all() as { name: string }[];
+  if (cols.some((c) => c.name === "origin")) return;
+  try {
+    sqlite.exec("ALTER TABLE recipes ADD COLUMN origin TEXT NOT NULL DEFAULT 'manual'");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("duplicate column")) throw error;
+  }
 }
 
 initDb();

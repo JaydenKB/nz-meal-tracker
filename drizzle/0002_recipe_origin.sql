@@ -1,0 +1,2 @@
+-- Add origin column to recipes (manual | ai)
+-- Safe to run on existing DBs; initDb also applies via PRAGMA check

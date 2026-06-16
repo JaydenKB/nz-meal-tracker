@@ -1,0 +1,2 @@
+-- Extended nutrients JSON + source on ingredients
+-- Applied via initDb PRAGMA check in src/lib/db/index.ts

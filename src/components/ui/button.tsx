@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "destructive";
+type Variant = "primary" | "secondary" | "ghost" | "destructive" | "ai" | "outline";
 type Size = "default" | "sm" | "lg";
 
 const variants: Record<Variant, string> = {
@@ -9,6 +9,9 @@ const variants: Record<Variant, string> = {
   secondary: "bg-[var(--beige)] text-[var(--foreground)] hover:bg-[#e8e4dc]",
   ghost: "bg-transparent text-[var(--muted)] hover:bg-[var(--beige)]",
   destructive: "bg-red-600 text-white hover:bg-red-700",
+  ai: "bg-[var(--ai-soft)] text-[var(--ai)] hover:bg-[#e2dcf5]",
+  outline:
+    "border border-[var(--primary)] bg-white text-[var(--primary)] hover:bg-[var(--mint)]",
 };
 
 const sizes: Record<Size, string> = {
@@ -27,7 +30,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-[var(--radius)] transition-colors disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius)] transition-colors active:opacity-80 disabled:pointer-events-none disabled:opacity-50",
         variants[variant],
         sizes[size],
         className,

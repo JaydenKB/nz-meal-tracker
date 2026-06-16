@@ -4,18 +4,26 @@
   --background: #ffffff;
   --foreground: #1a1a1a;
   --muted: #6b7280;
-  --primary: #13664f;
-  --primary-dark: #0f5240;
-  --beige: #f2efe9;
+  --primary: #0f6e56;
+  --primary-dark: #0c5844;
+  --ai: #534ab7;
+  --ai-soft: #ede7f6;
+  --streak: #ef9f27;
+  --streak-soft: #fdf3e3;
+  --success: #639922;
+  --success-soft: #eef5e4;
+  --beige: #f1efe8;
   --blue-soft: #ebf2f9;
-  --orange-soft: #f9efe2;
+  --orange-soft: #fdf3e3;
   --green-soft: #e8f5e9;
   --purple-soft: #ede7f6;
   --mint: #dceee6;
   --mint-hero: #c8e6d9;
-  --border: #eceae6;
-  --radius: 16px;
-  --radius-lg: 20px;
+  --border: #eceae2;
+  --radius: 10px;
+  --radius-card: 12px;
+  --radius-pill: 20px;
+  --radius-lg: 12px;
 }
 
 @theme inline {
@@ -38,9 +46,101 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.app-main {
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.app-main-no-nav {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role="button"],
+a,
+label,
+select,
+input,
+textarea {
+  touch-action: manipulation;
+}
+
+.ocr-scan-beam {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(15, 110, 86, 0.35) 45%,
+    transparent 90%
+  );
+  animation: ocr-scan-beam 1.8s ease-in-out infinite;
+}
+
+@keyframes ocr-scan-beam {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes log-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.log-pop {
+  animation: log-pop 0.35s ease-out;
+}
+
+.ai-elaborate-shimmer {
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(83, 74, 183, 0.08) 45%,
+    rgba(83, 74, 183, 0.18) 50%,
+    rgba(83, 74, 183, 0.08) 55%,
+    transparent 100%
+  );
+  animation: ai-elaborate-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes ai-elaborate-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 159, 39, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 159, 39, 0);
+  }
+}
+
+.timer-done-pulse {
+  animation: timer-pulse 0.8s ease-out 2;
 }

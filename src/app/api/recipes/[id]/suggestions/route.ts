@@ -1,35 +1,33 @@
 import { NextResponse } from "next/server";
 import {
   calculateLineMacros,
+  calculateLineNutrients,
   perServing,
+  perServingNutrients,
   roundMacros,
   sumMacros,
+  sumNutrients,
 } from "@/lib/nutrition/calculate";
 import { calculateHealthScore } from "@/lib/nutrition/healthScore";
 import { getAppSettings } from "@/lib/log/queries";
 import { getAllIngredients, getRecipeWithDetails } from "@/lib/queries";
 import type { Ingredient } from "@/lib/db/schema";
 import { applySuggestionToRecipe } from "@/lib/suggestions/apply";
+import { effectiveAiProvider } from "@/lib/ai/settings";
 import {
   buildSuggestionPrompt,
   fetchOllamaSuggestions,
   parseSuggestionsJson,
   type SuggestionAction,
 } from "@/lib/suggestions/ollama";
+import {
+  formatMacroDelta,
+  macroDeltaPerServing,
+  simulateSuggestion,
+  type SimLine,
+} from "@/lib/suggestions/simulate";
 
 export const runtime = "nodejs";
-
-type SimLine = {
-  ingredientId: number;
-  quantity: number;
-  unit: string;
-  isProcessed: boolean;
-  calories: number;
-  proteinG: number;
-  fatG: number;
-  carbsG: number;
-  defaultUnit: string;
-};
 
 async function loadSimLines(recipeId: number): Promise<SimLine[] | null> {
   const details = await getRecipeWithDetails(recipeId);
@@ -44,7 +42,19 @@ async function loadSimLines(recipeId: number): Promise<SimLine[] | null> {
     fatG: l.ingredient.fatG,
     carbsG: l.ingredient.carbsG,
     defaultUnit: l.ingredient.defaultUnit,
+    nutrientsJson: l.ingredient.nutrientsJson,
   }));
+}
+
+function perServingMacrosFromLines(lines: SimLine[], servings: number) {
+  const macros = lines.map((l) =>
+    calculateLineMacros({
+      quantity: l.quantity,
+      unit: l.unit,
+      ingredient: l,
+    }),
+  );
+  return roundMacros(perServing(roundMacros(sumMacros(macros)), servings));
 }
 
 function scoreFromSimLines(lines: SimLine[], servings: number) {
@@ -55,65 +65,22 @@ function scoreFromSimLines(lines: SimLine[], servings: number) {
       ingredient: l,
     }),
   );
+  const nutrients = lines.map((l) =>
+    calculateLineNutrients({
+      quantity: l.quantity,
+      unit: l.unit,
+      ingredient: l,
+    }),
+  );
   const perServingMacros = roundMacros(perServing(roundMacros(sumMacros(macros)), servings));
+  const perServingExtended = perServingNutrients(sumNutrients(nutrients), servings);
   const processedCount = lines.filter((l) => l.isProcessed).length;
-  return calculateHealthScore(perServingMacros, processedCount, lines.length).score;
-}
-
-function simulateSuggestion(
-  lines: SimLine[],
-  s: SuggestionAction,
-  ingredientMap: Map<number, Ingredient>,
-): SimLine[] {
-  const action = s.action ?? "adjust";
-  const copy = [...lines];
-
-  if (action === "swap" && s.ingredient_id && s.new_ingredient_id) {
-    const replacement = ingredientMap.get(s.new_ingredient_id);
-    if (!replacement) return copy;
-    return copy.map((l) =>
-      l.ingredientId === s.ingredient_id
-        ? {
-            ingredientId: replacement.id,
-            quantity: l.quantity,
-            unit: l.unit,
-            isProcessed: replacement.isProcessed,
-            calories: replacement.calories,
-            proteinG: replacement.proteinG,
-            fatG: replacement.fatG,
-            carbsG: replacement.carbsG,
-            defaultUnit: replacement.defaultUnit,
-          }
-        : l,
-    );
-  }
-  if (action === "remove" && s.ingredient_id) {
-    return copy.filter((l) => l.ingredientId !== s.ingredient_id);
-  }
-  if (action === "add" && s.new_ingredient_id) {
-    const ing = ingredientMap.get(s.new_ingredient_id);
-    if (ing) {
-      copy.push({
-        ingredientId: ing.id,
-        quantity: s.quantity ?? 100,
-        unit: s.unit ?? ing.defaultUnit,
-        isProcessed: ing.isProcessed,
-        calories: ing.calories,
-        proteinG: ing.proteinG,
-        fatG: ing.fatG,
-        carbsG: ing.carbsG,
-        defaultUnit: ing.defaultUnit,
-      });
-    }
-  }
-  if (action === "adjust" && s.ingredient_id && s.quantity != null) {
-    return copy.map((l) =>
-      l.ingredientId === s.ingredient_id
-        ? { ...l, quantity: s.quantity!, unit: s.unit ?? l.unit }
-        : l,
-    );
-  }
-  return copy;
+  return calculateHealthScore(
+    perServingMacros,
+    processedCount,
+    lines.length,
+    perServingExtended,
+  ).score;
 }
 
 async function projectScore(
@@ -181,28 +148,44 @@ export async function POST(
         unit: l.unit,
       })),
       perServing: details.perServing,
+      perServingNutrients: details.perServingNutrients,
       healthScore: details.healthScore.score,
-      allIngredients: allIngredients.map((i) => ({ id: i.id, name: i.name })),
+      allIngredients: allIngredients.map((i) => ({
+        id: i.id,
+        name: i.name,
+        calories: i.calories,
+        proteinG: i.proteinG,
+        fatG: i.fatG,
+        carbsG: i.carbsG,
+        defaultUnit: i.defaultUnit,
+      })),
     });
 
     const raw = await fetchOllamaSuggestions(settings, prompt);
     const parsed = parseSuggestionsJson(raw);
 
-    const enriched = await Promise.all(
-      parsed.map(async (s) => {
-        const singleScore = await projectScore(
-          recipeId,
-          details.recipe.servings,
-          [s],
-          ingredientMap,
-        );
-        return {
-          ...s,
-          computed_delta:
-            singleScore != null ? singleScore - details.healthScore.score : s.score_delta,
-        };
-      }),
-    );
+    const baseLines = await loadSimLines(recipeId);
+    if (!baseLines) {
+      return NextResponse.json({ error: "Recipe not found" }, { status: 404 });
+    }
+
+    const baseMacros = perServingMacrosFromLines(baseLines, details.recipe.servings);
+
+    const enriched = parsed.map((s) => {
+      const afterLines = simulateSuggestion(baseLines, s, ingredientMap);
+      const afterMacros = perServingMacrosFromLines(afterLines, details.recipe.servings);
+      const macroDelta = macroDeltaPerServing(baseMacros, afterMacros);
+      const singleScore = scoreFromSimLines(afterLines, details.recipe.servings);
+      const computedDelta =
+        singleScore != null ? singleScore - details.healthScore.score : s.score_delta;
+
+      return {
+        ...s,
+        computed_delta: computedDelta,
+        macro_delta: macroDelta,
+        macro_summary: `Per serving: ${formatMacroDelta(macroDelta)}`,
+      };
+    });
 
     const projectedScore = await projectScore(
       recipeId,
@@ -215,7 +198,8 @@ export async function POST(
       suggestions: enriched,
       currentScore: details.healthScore.score,
       projectedScore: projectedScore ?? details.healthScore.score,
-      local: true,
+      local: effectiveAiProvider(settings) === "local",
+      provider: effectiveAiProvider(settings),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to generate suggestions";

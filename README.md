@@ -8,7 +8,28 @@ Personal calorie and recipe tracker for Auckland, NZ. Self-hosted on your deskto
 - AI-generated food photos (OpenAI DALL·E 3)
 - Health score (0–100) with breakdown
 - Batch shopping lists grouped by store (Woolworths, New Market, etc.)
-- PWA support — add to home screen on your phone
+- PWA support — add to home screen on your phone (standalone, custom icon)
+
+## Add to Home Screen (PWA)
+
+The app is designed to be installed from your phone's browser while on the same WiFi as your desktop.
+
+**iPhone (Safari):** open your LAN URL → Share → **Add to Home Screen**. This launches full-screen with no address bar, using the "Meals" title and custom icon.
+
+**What works over plain HTTP (LAN):**
+- Standalone launch, icon, and title on iOS (via Apple-specific meta tags)
+- Full app functionality
+
+**What may not work without HTTPS:**
+- Service worker registration (fails gracefully — the app still works)
+- Android "Install app" prompt
+
+For the **full** PWA experience including service worker caching and Android install, serve over HTTPS. The planned Tailscale or Cloudflare Tunnel remote-access setup provides a real HTTPS hostname without exposing your home network.
+
+**Regenerate icons** after changing the brand SVG:
+```powershell
+npm.cmd run generate:icons
+```
 
 ## Quick Start
 

@@ -1,6 +1,6 @@
 import type { Macros } from "@/lib/nutrition/calculate";
 
-export function MacroGrid({ perServing }: { perServing: Macros }) {
+export function MacroTiles({ perServing }: { perServing: Macros }) {
   const stats = [
     { value: Math.round(perServing.calories), label: "kcal" },
     { value: `${Math.round(perServing.proteinG)}g`, label: "protein" },
@@ -9,16 +9,23 @@ export function MacroGrid({ perServing }: { perServing: Macros }) {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-4 gap-2">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="rounded-[var(--radius)] bg-[var(--beige)] px-2 py-3 text-center"
+          className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--beige)] px-1 py-3 text-center"
         >
-          <p className="text-lg font-bold leading-none">{stat.value}</p>
-          <p className="mt-1 text-[11px] text-[var(--muted)]">{stat.label}</p>
+          <p className="text-base font-medium leading-none text-[var(--foreground)]">
+            {stat.value}
+          </p>
+          <p className="mt-1.5 text-[10px] font-normal text-[var(--muted)]">{stat.label}</p>
         </div>
       ))}
     </div>
   );
+}
+
+/** @deprecated Use MacroTiles */
+export function MacroGrid({ perServing }: { perServing: Macros }) {
+  return <MacroTiles perServing={perServing} />;
 }

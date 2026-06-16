@@ -1,0 +1,2 @@
+-- Add vision model setting for screenshot import
+-- Applied via initDb PRAGMA check in src/lib/db/index.ts

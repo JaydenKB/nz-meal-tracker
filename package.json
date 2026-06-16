@@ -8,9 +8,11 @@
     "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "eslint",
     "db:push": "drizzle-kit push",
-    "db:seed": "curl -X POST http://localhost:3000/api/seed"
+    "db:seed": "curl -X POST http://localhost:3000/api/seed",
+    "generate:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.2",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -31,6 +33,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "sharp": "^0.35.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

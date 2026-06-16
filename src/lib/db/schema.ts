@@ -10,6 +10,8 @@ export const ingredients = sqliteTable("ingredients", {
   fatG: real("fat_g").notNull().default(0),
   carbsG: real("carbs_g").notNull().default(0),
   isProcessed: integer("is_processed", { mode: "boolean" }).notNull().default(false),
+  nutrientsJson: text("nutrients_json"),
+  nutritionSource: text("nutrition_source"),
 });
 
 export const stores = sqliteTable("stores", {
@@ -40,6 +42,7 @@ export const recipes = sqliteTable("recipes", {
   servings: integer("servings").notNull().default(1),
   instructions: text("instructions"),
   imageUrl: text("image_url"),
+  origin: text("origin").notNull().default("manual"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -92,8 +95,18 @@ export const dailyGoals = sqliteTable("daily_goals", {
 export const appSettings = sqliteTable("app_settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   ollamaBaseUrl: text("ollama_base_url").notNull().default("http://localhost:11434"),
-  ollamaModel: text("ollama_model").notNull().default("qwen2.5"),
+  ollamaModel: text("ollama_model").notNull().default("qwen2.5:7b"),
+  ollamaVisionModel: text("ollama_vision_model").notNull().default("qwen2.5vl:3b"),
+  aiProvider: text("ai_provider").notNull().default("local"),
+  openaiApiKey: text("openai_api_key"),
+  openaiTextModel: text("openai_text_model").notNull().default("gpt-4o-mini"),
+  openaiVisionModel: text("openai_vision_model").notNull().default("gpt-4o"),
+  anthropicApiKey: text("anthropic_api_key"),
+  anthropicTextModel: text("anthropic_text_model").notNull().default("claude-sonnet-4-20250514"),
 });
+
+export type AiProvider = "local" | "openai" | "anthropic";
+export const AI_PROVIDERS: AiProvider[] = ["local", "openai", "anthropic"];
 
 export const ingredientsRelations = relations(ingredients, ({ many }) => ({
   recipeIngredients: many(recipeIngredients),
@@ -140,6 +153,7 @@ export const dailyLogEntriesRelations = relations(dailyLogEntries, ({ one }) => 
 }));
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type RecipeOrigin = "manual" | "ai";
 export const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export type Ingredient = typeof ingredients.$inferSelect;

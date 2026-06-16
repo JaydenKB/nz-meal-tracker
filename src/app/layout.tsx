@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { MainShell } from "@/components/layout/main-shell";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { SW_RECOVERY_SCRIPT } from "@/lib/pwa/sw-recovery-script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -11,19 +14,29 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "NZ Meal Tracker",
   description: "Track calories, recipes, and shopping lists for Auckland meals",
-  manifest: "/manifest.json",
+  applicationName: "NZ Meal Tracker",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Meal Tracker",
+    title: "Meals",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#13664f",
+  themeColor: "#0F6E56",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -34,8 +47,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
       <body className="min-h-full bg-white text-[var(--foreground)]">
-        <div className="mx-auto min-h-full max-w-[430px] bg-white shadow-none">
-          <main className="min-h-screen px-5 pb-28 pt-6">{children}</main>
+        <script dangerouslySetInnerHTML={{ __html: SW_RECOVERY_SCRIPT }} />
+        <ServiceWorkerRegister />
+        <div className="relative mx-auto min-h-full max-w-[430px] bg-white shadow-none">
+          <MainShell>{children}</MainShell>
           <BottomNav />
         </div>
       </body>

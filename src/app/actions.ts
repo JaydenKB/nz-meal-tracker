@@ -25,6 +25,8 @@ export async function createIngredient(formData: FormData) {
     fatG: Number(formData.get("fatG") ?? 0),
     carbsG: Number(formData.get("carbsG") ?? 0),
     isProcessed: formData.get("isProcessed") === "on",
+    nutrientsJson: String(formData.get("nutrientsJson") ?? "") || null,
+    nutritionSource: String(formData.get("nutritionSource") ?? "") || null,
   });
 
   revalidatePath("/ingredients");
@@ -45,11 +47,15 @@ export async function createStore(formData: FormData) {
   });
 
   revalidatePath("/stores");
+  revalidatePath("/ingredients/import");
+  revalidatePath("/shop");
 }
 
 export async function deleteStore(id: number) {
   await db.delete(stores).where(eq(stores.id, id));
   revalidatePath("/stores");
+  revalidatePath("/ingredients/import");
+  revalidatePath("/shop");
 }
 
 export async function createStoreProduct(formData: FormData) {
@@ -65,11 +71,15 @@ export async function createStoreProduct(formData: FormData) {
   });
 
   revalidatePath("/stores");
+  revalidatePath("/ingredients/import");
+  revalidatePath("/shop");
 }
 
 export async function deleteStoreProduct(id: number) {
   await db.delete(storeProducts).where(eq(storeProducts.id, id));
   revalidatePath("/stores");
+  revalidatePath("/ingredients/import");
+  revalidatePath("/shop");
 }
 
 export async function createRecipe(formData: FormData) {
