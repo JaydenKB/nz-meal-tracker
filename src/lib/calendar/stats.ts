@@ -1,5 +1,7 @@
 import { roundMacros, type Macros } from "@/lib/nutrition/calculate";
 import type { LogEntryWithMeta } from "@/lib/log/compute";
+import { todayString } from "@/lib/log/compute";
+import { countsTowardPlanTotals } from "@/lib/log/catch-up";
 import { getLogEntryCost } from "@/lib/cost/entry";
 import { lineCostFromProduct } from "@/lib/cost/packages";
 import { fromCanonicalForDisplay } from "@/lib/pantry/canonical";
@@ -54,12 +56,14 @@ function daysWithEatenEntries(entries: LogEntryWithMeta[]): number {
   return Math.max(1, days.size);
 }
 
-/** Combined avg = all entries in the Mon–Sun week ÷ 7 (forward-looking plan). */
+/** Combined avg = eaten + future planned in the Mon–Sun week ÷ 7. Past unresolved planned excluded. */
 export function computeWeekMacroStats(entries: LogEntryWithMeta[]): {
   combined: WeekMacroStats;
   eatenOnly: WeekMacroStats;
 } {
-  const combinedTotal = sumMacros(entries);
+  const today = todayString();
+  const planCountable = entries.filter((e) => countsTowardPlanTotals(e, today));
+  const combinedTotal = sumMacros(planCountable);
   const eatenEntries = entries.filter((e) => e.status === "eaten");
   const eatenTotal = sumMacros(eatenEntries);
 
@@ -67,7 +71,7 @@ export function computeWeekMacroStats(entries: LogEntryWithMeta[]): {
     combined: {
       avgPerDay: avgPerWeekDay(combinedTotal, WEEK_DAYS),
       label: "Avg / day (plan + eaten, ÷ 7 days)",
-      entryCount: entries.length,
+      entryCount: planCountable.length,
     },
     eatenOnly: {
       avgPerDay: avgPerWeekDay(eatenTotal, daysWithEatenEntries(eatenEntries)),

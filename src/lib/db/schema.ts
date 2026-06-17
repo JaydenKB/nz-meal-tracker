@@ -156,6 +156,7 @@ export const appSettings = sqliteTable("app_settings", {
   lastBackupAt: text("last_backup_at"),
   lastBackupStatus: text("last_backup_status"),
   lastBackupError: text("last_backup_error"),
+  pantryLastReconciledAt: text("pantry_last_reconciled_at"),
 });
 
 export type AiProvider = "local" | "openai" | "anthropic";
@@ -217,10 +218,10 @@ export const dailyLogEntriesRelations = relations(dailyLogEntries, ({ one }) => 
 }));
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
-export type LogStatus = "eaten" | "planned";
+export type LogStatus = "eaten" | "planned" | "skipped" | "replaced";
 export type RecipeOrigin = "manual" | "ai";
 export const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
-export const LOG_STATUSES: LogStatus[] = ["eaten", "planned"];
+export const LOG_STATUSES: LogStatus[] = ["eaten", "planned", "skipped", "replaced"];
 
 export type Ingredient = typeof ingredients.$inferSelect;
 export type PantryItem = typeof pantryItems.$inferSelect;

@@ -1,5 +1,6 @@
 import { PantryPageClient } from "@/components/pantry/pantry-page-client";
 import { getPantryRows, pantryDisplayQuantity, pantryStockLevel } from "@/lib/pantry/queries";
+import { getPantryDriftStatus } from "@/lib/pantry/reconcile";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ function stockBarPct(quantity: number, lowThreshold: number | null): number {
 }
 
 export default async function PantryPage() {
-  const rows = await getPantryRows();
+  const [rows, drift] = await Promise.all([getPantryRows(), getPantryDriftStatus()]);
 
   const items = rows.map((row) => ({
     id: row.id,
@@ -26,5 +27,5 @@ export default async function PantryPage() {
     barPct: stockBarPct(row.quantity, row.lowThreshold),
   }));
 
-  return <PantryPageClient items={items} />;
+  return <PantryPageClient items={items} drift={drift} />;
 }

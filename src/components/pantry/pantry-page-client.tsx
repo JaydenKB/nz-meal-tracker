@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { getRecipeAccent } from "@/lib/theme";
 
+import { PantryReconcileBanner } from "@/components/pantry/pantry-reconcile-client";
+import type { PantryDriftStatus } from "@/lib/pantry/reconcile";
+
 type PantryItemView = {
   id: number;
   ingredientId: number;
@@ -22,7 +25,13 @@ type PantryItemView = {
   barPct: number;
 };
 
-export function PantryPageClient({ items }: { items: PantryItemView[] }) {
+export function PantryPageClient({
+  items,
+  drift,
+}: {
+  items: PantryItemView[];
+  drift: PantryDriftStatus;
+}) {
   const [filter, setFilter] = useState<"all" | "low" | "staples">("all");
   const [showAdd, setShowAdd] = useState(false);
   const [ingredientId, setIngredientId] = useState("");
@@ -90,12 +99,18 @@ export function PantryPageClient({ items }: { items: PantryItemView[] }) {
         </Button>
       </Link>
 
+      <PantryReconcileBanner drift={drift} />
+
       <div className="rounded-xl border border-[#e8b86d]/40 bg-[#fef9f0] px-4 py-3 text-sm text-[#92400e]">
         Quantities off after cooking?{" "}
-        <Link href="/shop/pantry/restock?hub=1" className="font-medium underline">
-          Photo restock
+        <Link href="/shop/pantry/reconcile" className="font-medium underline">
+          Quick stock check
         </Link>{" "}
-        to reconcile what&apos;s actually on hand.
+        or{" "}
+        <Link href="/shop/pantry/restock?hub=1" className="font-medium underline">
+          photo restock
+        </Link>
+        .
       </div>
 
       <Link href="/recipes/cook-from-pantry">

@@ -64,7 +64,7 @@ export async function getFrequentRecipes(limit = 4) {
       count: sql<number>`count(*)`.mapWith(Number),
     })
     .from(dailyLogEntries)
-    .where(sql`${dailyLogEntries.recipeId} IS NOT NULL`)
+    .where(sql`${dailyLogEntries.recipeId} IS NOT NULL AND ${dailyLogEntries.status} = 'eaten'`)
     .groupBy(dailyLogEntries.recipeId)
     .orderBy(desc(sql`count(*)`))
     .limit(limit);

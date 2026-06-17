@@ -75,6 +75,10 @@ export async function updateAppSettings(data: Partial<AppSettings>) {
       lastBackupAt: data.lastBackupAt ?? current.lastBackupAt,
       lastBackupStatus: data.lastBackupStatus ?? current.lastBackupStatus,
       lastBackupError: data.lastBackupError ?? current.lastBackupError,
+      pantryLastReconciledAt:
+        data.pantryLastReconciledAt !== undefined
+          ? data.pantryLastReconciledAt
+          : current.pantryLastReconciledAt,
     })
     .where(eq(appSettings.id, current.id));
   return getAppSettings();

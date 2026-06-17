@@ -128,6 +128,7 @@ export function initDb() {
   migrateLogStatus();
   migrateArchiveColumns();
   migrateBackupSettings();
+  migratePantryReconcile();
   seedIngredientConversions();
 
   const { ensureDailyBackupCheck } = require("@/lib/backup/trigger") as typeof import("@/lib/backup/trigger");
@@ -218,6 +219,18 @@ function migrateBackupSettings() {
   }
   if (!cols.some((c) => c.name === "last_backup_error")) {
     add("ALTER TABLE app_settings ADD COLUMN last_backup_error TEXT");
+  }
+}
+
+function migratePantryReconcile() {
+  const cols = sqlite.prepare("PRAGMA table_info(app_settings)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "pantry_last_reconciled_at")) {
+    try {
+      sqlite.exec("ALTER TABLE app_settings ADD COLUMN pantry_last_reconciled_at TEXT");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
   }
 }
 

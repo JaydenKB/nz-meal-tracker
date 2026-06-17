@@ -11,6 +11,7 @@ import {
   Plus,
   ShoppingCart,
 } from "lucide-react";
+import { CatchUpBanner } from "@/components/log/catch-up-client";
 import { MealStatusTag } from "@/components/calendar/meal-status-tag";
 import { ProgressStrip } from "@/components/today/progress-strip";
 import { Button } from "@/components/ui/button";
@@ -68,10 +69,12 @@ export function WeekCalendarClient({
   streakDays,
   calorieTarget,
   cookNowCount = 0,
+  catchUpCount = 0,
 }: {
   streakDays: number;
   calorieTarget: number;
   cookNowCount?: number;
+  catchUpCount?: number;
 }) {
   const router = useRouter();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayString()));
@@ -179,6 +182,8 @@ export function WeekCalendarClient({
           remaining={Math.max(0, calorieTarget - Math.round(eatenTodayCalories))}
         />
       )}
+
+      {catchUpCount > 0 && <CatchUpBanner initialCount={catchUpCount} />}
 
       {cookNowCount > 0 && (
         <Link
