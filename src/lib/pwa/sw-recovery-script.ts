@@ -11,7 +11,7 @@ export const SW_RECOVERY_SCRIPT = `(function(){
       /^172\\.(1[6-9]|2\\d|3[01])\\./.test(h);
     if (!local || !("serviceWorker" in navigator)) return;
 
-    var KEY = "meal-sw-cleared-v5";
+    var KEY = "meal-sw-cleared-v6";
     var clearAll = function() {
       return Promise.all([
         navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -34,7 +34,5 @@ export const SW_RECOVERY_SCRIPT = `(function(){
     if (!navigator.serviceWorker.controller) {
       sessionStorage.removeItem(KEY);
     }
-
-    clearAll();
   } catch (e) {}
 })();`;

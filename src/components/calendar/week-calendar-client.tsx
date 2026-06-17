@@ -90,17 +90,28 @@ export function WeekCalendarClient({
   const [loading, setLoading] = useState(true);
   const [markingId, setMarkingId] = useState<number | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const fetchWeek = useCallback(async () => {
     const res = await fetch(
       `/api/calendar/week?weekStart=${weekStart}&date=${selectedDate}`,
     );
-    setData(await res.json());
-    setLoading(false);
+    if (res.ok) {
+      setData(await res.json());
+    }
   }, [weekStart, selectedDate]);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      await fetchWeek();
+    } catch {
+      /* keep prior data */
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchWeek]);
+
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   const daysWithEntries = useMemo(() => {
@@ -161,7 +172,15 @@ export function WeekCalendarClient({
   })();
 
   return (
-    <PullToRefresh onRefresh={load}>
+    <PullToRefresh
+      onRefresh={async () => {
+        try {
+          await fetchWeek();
+        } catch {
+          /* silent */
+        }
+      }}
+    >
     <div className="mx-auto max-w-[430px] space-y-5">
       <header className="flex items-start justify-between gap-3">
         <div>
