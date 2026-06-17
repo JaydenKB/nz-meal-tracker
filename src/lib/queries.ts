@@ -72,6 +72,40 @@ export async function getAllIngredients() {
   return db.select().from(ingredients).orderBy(ingredients.name);
 }
 
+export async function getIngredientDetail(ingredientId: number) {
+  const ingredient = await db
+    .select()
+    .from(ingredients)
+    .where(eq(ingredients.id, ingredientId))
+    .get();
+  if (!ingredient) return null;
+
+  const productRows = await db
+    .select()
+    .from(storeProducts)
+    .innerJoin(stores, eq(storeProducts.storeId, stores.id))
+    .where(eq(storeProducts.ingredientId, ingredientId));
+
+  const { getPantryItemByIngredient } = await import("@/lib/pantry/queries");
+  const pantryRow = await getPantryItemByIngredient(ingredientId);
+
+  return {
+    ingredient,
+    products: productRows.map((r) => ({
+      id: r.store_products.id,
+      productName: r.store_products.productName,
+      storeName: r.stores.name,
+      priceNzd: r.store_products.priceNzd,
+      packageSize: r.store_products.packageSize,
+      packageUnit: r.store_products.packageUnit,
+      isPreferred: r.store_products.isPreferred,
+    })),
+    pantry: pantryRow
+      ? { quantity: pantryRow.quantity, unit: pantryRow.unit }
+      : null,
+  };
+}
+
 export async function getAllStores() {
   return db.select().from(stores).orderBy(stores.name);
 }

@@ -117,7 +117,8 @@ export function buildShoppingList(
   return buildShoppingListCore(scaled, products);
 }
 
-function buildShoppingListCore(
+/** Core list builder — exported for week aggregation after pantry subtract. */
+export function buildShoppingListCore(
   lines: RecipeLineForShopping[],
   products: (StoreProduct & { store: Store; ingredient: Ingredient })[],
 ): ShoppingListGroup[] {

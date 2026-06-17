@@ -12,7 +12,7 @@ import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { Button } from "@/components/ui/button";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
 import { todayString } from "@/lib/log/compute";
-import { playLogSound } from "@/lib/sfx";
+import { logMealWithRewards } from "@/lib/sfx/log-rewards";
 import { parseMethodSteps } from "@/lib/recipes/format-method";
 import type { Macros } from "@/lib/nutrition/calculate";
 
@@ -50,17 +50,20 @@ export function RecipeDetailClient({
   const methodSteps = parseMethodSteps(instructions);
 
   async function handleLog() {
-    await fetch("/api/log", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: todayString(),
-        mealType: mealTypeFromTime(),
-        servings: 1,
-        recipeId: recipe.id,
+    const date = todayString();
+    await logMealWithRewards(date, "eaten", () =>
+      fetch("/api/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          mealType: mealTypeFromTime(),
+          servings: 1,
+          recipeId: recipe.id,
+          status: "eaten",
+        }),
       }),
-    });
-    playLogSound();
+    );
     router.push("/");
     router.refresh();
   }

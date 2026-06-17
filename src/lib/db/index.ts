@@ -68,6 +68,7 @@ export function initDb() {
       ingredient_id INTEGER REFERENCES ingredients(id) ON DELETE SET NULL,
       meal_type TEXT NOT NULL,
       servings REAL NOT NULL DEFAULT 1,
+      status TEXT NOT NULL DEFAULT 'eaten',
       logged_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS daily_goals (
@@ -106,6 +107,7 @@ export function initDb() {
   migrateIngredientNutrients();
   migrateIngredientPantryFields();
   migratePantryTables();
+  migrateLogStatus();
 }
 
 function migrateIngredientPantryFields() {
@@ -126,6 +128,18 @@ function migrateIngredientPantryFields() {
   }
   if (!cols.some((c) => c.name === "ml_per_gram")) {
     add("ALTER TABLE ingredients ADD COLUMN ml_per_gram REAL");
+  }
+}
+
+function migrateLogStatus() {
+  const cols = sqlite.prepare("PRAGMA table_info(daily_log_entries)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "status")) {
+    try {
+      sqlite.exec("ALTER TABLE daily_log_entries ADD COLUMN status TEXT NOT NULL DEFAULT 'eaten'");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
   }
 }
 

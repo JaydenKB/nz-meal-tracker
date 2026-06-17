@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { LogPickerClient } from "@/components/log/log-picker";
+import { WeekSummaryClient } from "@/components/calendar/week-summary-client";
 
-export default function LogPage() {
+export default function WeekSummaryPage() {
   return (
     <Suspense fallback={<p className="p-4 text-sm text-[var(--muted)]">Loading…</p>}>
-      <LogPickerClient />
+      <WeekSummaryClient />
     </Suspense>
   );
 }

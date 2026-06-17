@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { MainShell } from "@/components/layout/main-shell";
+import { SfxInit } from "@/components/sfx/sfx-init";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { SW_RECOVERY_SCRIPT } from "@/lib/pwa/sw-recovery-script";
 import "./globals.css";
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body className="min-h-full bg-white text-[var(--foreground)]">
         <script dangerouslySetInnerHTML={{ __html: SW_RECOVERY_SCRIPT }} />
         <ServiceWorkerRegister />
+        <SfxInit />
         <div className="relative mx-auto min-h-full max-w-[430px] bg-white shadow-none">
           <MainShell>{children}</MainShell>
           <BottomNav />

@@ -117,6 +117,8 @@ export const dailyLogEntries = sqliteTable("daily_log_entries", {
   ingredientId: integer("ingredient_id").references(() => ingredients.id, { onDelete: "set null" }),
   mealType: text("meal_type").notNull(),
   servings: real("servings").notNull().default(1),
+  /** eaten = consumed; planned = future meal not yet eaten */
+  status: text("status").notNull().default("eaten"),
   loggedAt: text("logged_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -202,8 +204,10 @@ export const dailyLogEntriesRelations = relations(dailyLogEntries, ({ one }) => 
 }));
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+export type LogStatus = "eaten" | "planned";
 export type RecipeOrigin = "manual" | "ai";
 export const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
+export const LOG_STATUSES: LogStatus[] = ["eaten", "planned"];
 
 export type Ingredient = typeof ingredients.$inferSelect;
 export type PantryItem = typeof pantryItems.$inferSelect;

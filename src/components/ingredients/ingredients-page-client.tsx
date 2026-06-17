@@ -80,8 +80,9 @@ export function IngredientsPageClient({
 
       <div className="space-y-2">
         {filtered.map((ing, idx) => (
-          <div
+          <Link
             key={ing.id}
+            href={`/ingredients/${ing.id}`}
             className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-white px-3.5 py-3"
           >
             <RecipeIcon index={idx} className="h-10 w-10" />
@@ -99,7 +100,7 @@ export function IngredientsPageClient({
               </p>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-          </div>
+          </Link>
         ))}
       </div>
     </div>

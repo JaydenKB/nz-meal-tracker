@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
-import { MEAL_LABELS, MEAL_ORDER, todayString } from "@/lib/log/compute";
+import { inferLogStatus } from "@/lib/calendar/week";
+import { MEAL_LABELS, MEAL_ORDER, todayString, shiftDate } from "@/lib/log/compute";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
-import type { MealType } from "@/lib/db/schema";
-import { playLogSound } from "@/lib/sfx";
+import type { LogStatus, MealType } from "@/lib/db/schema";
+import { logMealWithRewards } from "@/lib/sfx/log-rewards";
+import { play } from "@/lib/sfx";
 
 type PickerItem = {
   id: number;
@@ -27,6 +29,10 @@ type Filter = "recipes" | "ingredients" | "quick";
 
 export function LogPickerClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialDate = searchParams.get("date") ?? todayString();
+  const [logDate, setLogDate] = useState(initialDate);
+  const [status, setStatus] = useState<LogStatus>(() => inferLogStatus(initialDate));
   const [mealType, setMealType] = useState<MealType>(() => mealTypeFromTime());
   const [filter, setFilter] = useState<Filter>("recipes");
   const [query, setQuery] = useState("");
@@ -50,6 +56,10 @@ export function LogPickerClient() {
     });
   }, []);
 
+  useEffect(() => {
+    setStatus(inferLogStatus(logDate));
+  }, [logDate]);
+
   const items = useMemo(() => {
     const list = filter === "ingredients" ? ingredients : recipes;
     const q = query.trim().toLowerCase();
@@ -63,25 +73,32 @@ export function LogPickerClient() {
       setBusy(true);
 
       const body: Record<string, unknown> = {
-        date: todayString(),
+        date: logDate,
         mealType,
         servings,
+        status,
       };
       if (filter === "ingredients") body.ingredientId = item.id;
       else body.recipeId = item.id;
 
-      await fetch("/api/log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await logMealWithRewards(logDate, status, () =>
+        fetch("/api/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+      );
 
-      playLogSound();
+      if (!res.ok) {
+        play("error");
+        setBusy(false);
+        return;
+      }
       setBusy(false);
       router.push("/");
       router.refresh();
     },
-    [busy, filter, mealType, router, servings],
+    [busy, filter, logDate, mealType, router, servings, status],
   );
 
   return (
@@ -96,6 +113,46 @@ export function LogPickerClient() {
           <X className="h-5 w-5" strokeWidth={1.75} />
         </Link>
       </header>
+
+      <div className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--beige)] px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setLogDate((d) => shiftDate(d, -1))}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white"
+          aria-label="Previous day"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <div className="text-center">
+          <p className="text-sm font-medium">{logDate}</p>
+          <p className="text-xs capitalize text-[var(--muted)]">{status}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setLogDate((d) => shiftDate(d, 1))}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white"
+          aria-label="Next day"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex gap-2">
+        <Pill
+          active={status === "eaten"}
+          onClick={() => setStatus("eaten")}
+          className="flex-1 text-xs"
+        >
+          Eaten
+        </Pill>
+        <Pill
+          active={status === "planned"}
+          onClick={() => setStatus("planned")}
+          className="flex-1 text-xs"
+        >
+          Planned
+        </Pill>
+      </div>
 
       <div className="flex gap-2">
         {MEAL_ORDER.map((m) => (

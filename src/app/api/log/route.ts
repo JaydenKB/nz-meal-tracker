@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { MEAL_TYPES } from "@/lib/db/schema";
+import { MEAL_TYPES, LOG_STATUSES } from "@/lib/db/schema";
+import { inferLogStatus } from "@/lib/calendar/week";
 import { formatDateLabel, sumDailyMacros } from "@/lib/log/compute";
 import {
   createLogEntry,
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
     servings: Math.max(0.1, Number(body.servings ?? 1)),
     recipeId,
     ingredientId,
+    status:
+      body.status && LOG_STATUSES.includes(body.status)
+        ? body.status
+        : inferLogStatus(String(body.date ?? new Date().toLocaleDateString("en-CA"))),
   });
 
   let pantryDeduction;

@@ -1,4 +1,4 @@
-import { desc, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { dailyLogEntries, recipes } from "@/lib/db/schema";
 import { shiftDate, todayString } from "@/lib/log/compute";
@@ -20,6 +20,7 @@ export async function getLoggingDates(): Promise<string[]> {
   const rows = await db
     .selectDistinct({ date: dailyLogEntries.date })
     .from(dailyLogEntries)
+    .where(eq(dailyLogEntries.status, "eaten"))
     .orderBy(desc(dailyLogEntries.date));
   return rows.map((r) => r.date);
 }

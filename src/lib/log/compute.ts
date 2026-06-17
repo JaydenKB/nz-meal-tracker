@@ -1,4 +1,4 @@
-import type { DailyLogEntry, Ingredient, MealType } from "@/lib/db/schema";
+import type { DailyLogEntry, Ingredient, LogStatus, MealType } from "@/lib/db/schema";
 import {
   calculateLineMacros,
   roundMacros,
@@ -9,6 +9,7 @@ export type LogEntryWithMeta = {
   id: number;
   date: string;
   mealType: MealType;
+  status: LogStatus;
   servings: number;
   loggedAt: string;
   name: string;
@@ -16,6 +17,8 @@ export type LogEntryWithMeta = {
   ingredientId: number | null;
   macros: Macros;
   accentIndex: number;
+  entryCost: number | null;
+  costPartial: boolean;
 };
 
 export function computeEntryMacros(
@@ -48,7 +51,27 @@ export function computeEntryMacros(
   return { calories: 0, proteinG: 0, fatG: 0, carbsG: 0 };
 }
 
-export function sumDailyMacros(entries: LogEntryWithMeta[]): Macros {
+export function sumDailyMacros(
+  entries: LogEntryWithMeta[],
+  options?: { status?: LogStatus },
+): Macros {
+  const filtered = options?.status
+    ? entries.filter((e) => e.status === options.status)
+    : entries.filter((e) => e.status === "eaten");
+  return roundMacros(
+    filtered.reduce(
+      (acc, e) => ({
+        calories: acc.calories + e.macros.calories,
+        proteinG: acc.proteinG + e.macros.proteinG,
+        fatG: acc.fatG + e.macros.fatG,
+        carbsG: acc.carbsG + e.macros.carbsG,
+      }),
+      { calories: 0, proteinG: 0, fatG: 0, carbsG: 0 },
+    ),
+  );
+}
+
+export function sumAllMacros(entries: LogEntryWithMeta[]): Macros {
   return roundMacros(
     entries.reduce(
       (acc, e) => ({

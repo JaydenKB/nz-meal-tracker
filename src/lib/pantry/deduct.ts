@@ -14,8 +14,8 @@ export type PantryDeductionResult = {
 };
 
 /**
- * Deduct recipe ingredients from pantry after cooking.
- * Trigger: Cooking Mode finish only (deductPantry=true on log API) — NOT regular "Log this".
+ * Deduct recipe ingredients from pantry after cooking or marking a planned meal eaten.
+ * Trigger: Cooking Mode finish (deductPantry=true) or PATCH mark-eaten — NOT regular "Log this".
  */
 export async function deductRecipeFromPantry(
   recipeId: number,

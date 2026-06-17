@@ -1,5 +1,6 @@
-import { TodayLandingClient } from "@/components/today/today-landing";
-import { getFrequentRecipes, getLoggingDates, computeStreak } from "@/lib/progress/stats";
+import { WeekCalendarClient } from "@/components/calendar/week-calendar-client";
+import { getLoggingDates, computeStreak } from "@/lib/progress/stats";
+import { getDailyGoals } from "@/lib/log/queries";
 import { seedDatabase } from "@/lib/db/seed";
 
 export const dynamic = "force-dynamic";
@@ -7,13 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function TodayPage() {
   await seedDatabase();
 
-  const [dates, frequentRecipes] = await Promise.all([
-    getLoggingDates(),
-    getFrequentRecipes(4),
-  ]);
+  const [dates, goals] = await Promise.all([getLoggingDates(), getDailyGoals()]);
   const { current: streakDays } = computeStreak(dates);
 
-  return (
-    <TodayLandingClient streakDays={streakDays} frequentRecipes={frequentRecipes} />
-  );
+  return <WeekCalendarClient streakDays={streakDays} calorieTarget={goals.calorieTarget} />;
 }

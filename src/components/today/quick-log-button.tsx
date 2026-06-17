@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
-import { playLogSound } from "@/lib/sfx";
+import { logMealWithRewards } from "@/lib/sfx/log-rewards";
+import { play } from "@/lib/sfx";
 import { todayString } from "@/lib/log/compute";
 import { cn } from "@/lib/utils";
 
@@ -25,18 +26,26 @@ export function QuickLogButton({
     if (busy) return;
     setBusy(true);
 
-    await fetch("/api/log", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: todayString(),
-        mealType: mealTypeFromTime(),
-        servings: 1,
-        recipeId,
+    const date = todayString();
+    const res = await logMealWithRewards(date, "eaten", () =>
+      fetch("/api/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          mealType: mealTypeFromTime(),
+          servings: 1,
+          recipeId,
+          status: "eaten",
+        }),
       }),
-    });
+    );
 
-    playLogSound();
+    if (!res.ok) {
+      play("error");
+      setBusy(false);
+      return;
+    }
     setPopping(true);
     setTimeout(() => setPopping(false), 350);
     setBusy(false);

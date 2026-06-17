@@ -13,6 +13,7 @@ import { ANTHROPIC_TEXT_MODELS } from "@/lib/anthropic/client";
 import { providerTradeoff } from "@/lib/ai/settings";
 import type { AiProvider } from "@/lib/db/schema";
 import { sfxEnabled, setSfxEnabled } from "@/lib/sfx";
+import { SfxPreview } from "@/components/settings/sfx-preview";
 
 function SettingsSection({
   title,
@@ -624,6 +625,7 @@ export function SettingsForm({ layout = "default" }: { layout?: "default" | "gro
               />
             </button>
           </div>
+          <SfxPreview enabled={soundOn} />
           <button
             type="button"
             onClick={() => setShowGoals(!showGoals)}

@@ -30,7 +30,8 @@ import {
 import { useWakeLock } from "@/lib/cooking/use-wake-lock";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
 import { todayString } from "@/lib/log/compute";
-import { playLogSound, playTimerDoneSound } from "@/lib/sfx";
+import { playTimerDoneSound } from "@/lib/sfx";
+import { logMealWithRewards } from "@/lib/sfx/log-rewards";
 
 type ElaborationCache = Record<number, { normal?: string; simpler?: string }>;
 
@@ -241,18 +242,21 @@ export function CookingModeClient({
   async function handleLogMeal() {
     setLogging(true);
     try {
-      await fetch("/api/log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: todayString(),
-          mealType: mealTypeFromTime(),
-          servings: 1,
-          recipeId,
-          deductPantry: true,
+      const date = todayString();
+      await logMealWithRewards(date, "eaten", () =>
+        fetch("/api/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date,
+            mealType: mealTypeFromTime(),
+            servings: 1,
+            recipeId,
+            status: "eaten",
+            deductPantry: true,
+          }),
         }),
-      });
-      playLogSound();
+      );
       router.push("/");
       router.refresh();
     } catch {

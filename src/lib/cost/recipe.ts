@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { storeProducts } from "@/lib/db/schema";
 import { getRecipeWithDetails } from "@/lib/queries";
-import { convertQuantity, normalizeForNutrition, normalizeUnit } from "@/lib/nutrition/units";
+import { estimatePackagesForLine } from "@/lib/cost/packages";
 
 export type RecipeCostResult = {
   totalCost: number | null;
@@ -12,37 +12,7 @@ export type RecipeCostResult = {
   isPartial: boolean;
 };
 
-function getBaseUnit(unit: string, defaultUnit: string): string {
-  const u = normalizeUnit(unit, "g");
-  if (["g", "kg"].includes(u)) return "g";
-  if (["ml", "l", "tsp", "tbsp", "cup"].includes(u)) return "ml";
-  return defaultUnit === "each" ? "each" : defaultUnit;
-}
 
-function estimatePackagesForLine(
-  quantity: number,
-  unit: string,
-  defaultUnit: string,
-  product: { packageSize: number; packageUnit: string },
-): number {
-  if (defaultUnit === "each" || product.packageUnit === "each") {
-    return Math.max(1, Math.ceil(quantity / product.packageSize));
-  }
-
-  try {
-    const { amount } = normalizeForNutrition(quantity, unit, defaultUnit);
-    const neededInPackageUnit = convertQuantity(
-      amount,
-      defaultUnit === "each" ? "g" : getBaseUnit(unit, defaultUnit),
-      product.packageUnit,
-    );
-    return Math.max(1, Math.ceil(neededInPackageUnit / product.packageSize));
-  } catch {
-    return Math.max(1, Math.ceil(quantity / product.packageSize));
-  }
-}
-
-/** Estimated grocery cost for a recipe, split per serving (meal). */
 export async function getRecipeCost(recipeId: number): Promise<RecipeCostResult> {
   const details = await getRecipeWithDetails(recipeId);
   if (!details) {

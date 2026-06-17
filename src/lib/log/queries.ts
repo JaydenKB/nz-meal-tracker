@@ -5,10 +5,16 @@ import {
   dailyGoals,
   dailyLogEntries,
   ingredients,
+  pantryTransactions,
   recipes,
+  type LogStatus,
 } from "@/lib/db/schema";
-import type { DailyGoals, AppSettings } from "@/lib/db/schema";
+import type { DailyGoals, AppSettings, DailyLogEntry } from "@/lib/db/schema";
 import { computeEntryMacros, type LogEntryWithMeta } from "@/lib/log/compute";
+import { inferLogStatus } from "@/lib/calendar/week";
+import { getLogEntryCost } from "@/lib/cost/entry";
+import { deductRecipeFromPantry } from "@/lib/pantry/deduct";
+import { getRecipeWithDetails } from "@/lib/queries";
 
 export async function getDailyGoals(): Promise<DailyGoals> {
   const row = await db.select().from(dailyGoals).limit(1).get();
@@ -66,15 +72,7 @@ export async function updateAppSettings(data: Partial<AppSettings>) {
   return getAppSettings();
 }
 
-import { getRecipeWithDetails } from "@/lib/queries";
-
-export async function getLogEntriesForDate(date: string): Promise<LogEntryWithMeta[]> {
-  const rows = await db
-    .select()
-    .from(dailyLogEntries)
-    .where(eq(dailyLogEntries.date, date))
-    .orderBy(dailyLogEntries.loggedAt);
-
+export async function enrichLogEntries(rows: DailyLogEntry[]): Promise<LogEntryWithMeta[]> {
   const allIngredients = await db.select().from(ingredients);
   const ingredientMap = Object.fromEntries(allIngredients.map((i) => [i.id, i]));
   const allRecipes = await db.select().from(recipes);
@@ -91,11 +89,13 @@ export async function getLogEntriesForDate(date: string): Promise<LogEntryWithMe
       recipePerServing = details?.perServing ?? null;
     }
     const macros = computeEntryMacros(row, { ingredient: ing, recipePerServing });
+    const { cost, isPartial } = await getLogEntryCost(row);
 
     entries.push({
       id: row.id,
       date: row.date,
       mealType: row.mealType as LogEntryWithMeta["mealType"],
+      status: (row.status ?? "eaten") as LogStatus,
       servings: row.servings,
       loggedAt: row.loggedAt,
       name: row.recipeId
@@ -105,10 +105,22 @@ export async function getLogEntriesForDate(date: string): Promise<LogEntryWithMe
       ingredientId: row.ingredientId,
       macros,
       accentIndex: i % 3,
+      entryCost: cost,
+      costPartial: isPartial,
     });
   }
 
   return entries;
+}
+
+export async function getLogEntriesForDate(date: string): Promise<LogEntryWithMeta[]> {
+  const rows = await db
+    .select()
+    .from(dailyLogEntries)
+    .where(eq(dailyLogEntries.date, date))
+    .orderBy(dailyLogEntries.loggedAt);
+
+  return enrichLogEntries(rows);
 }
 
 export async function createLogEntry(data: {
@@ -117,7 +129,9 @@ export async function createLogEntry(data: {
   servings: number;
   recipeId?: number | null;
   ingredientId?: number | null;
+  status?: LogStatus;
 }) {
+  const status = data.status ?? inferLogStatus(data.date);
   const [entry] = await db
     .insert(dailyLogEntries)
     .values({
@@ -126,6 +140,7 @@ export async function createLogEntry(data: {
       servings: data.servings,
       recipeId: data.recipeId ?? null,
       ingredientId: data.ingredientId ?? null,
+      status,
     })
     .returning();
   return entry;
@@ -133,6 +148,40 @@ export async function createLogEntry(data: {
 
 export async function deleteLogEntry(id: number) {
   await db.delete(dailyLogEntries).where(eq(dailyLogEntries.id, id));
+}
+
+export async function hasPantryDeductionForLogEntry(logEntryId: number): Promise<boolean> {
+  const row = await db
+    .select()
+    .from(pantryTransactions)
+    .where(eq(pantryTransactions.refId, logEntryId))
+    .get();
+  return Boolean(row);
+}
+
+export async function markLogEntryEaten(id: number) {
+  const row = await db.select().from(dailyLogEntries).where(eq(dailyLogEntries.id, id)).get();
+  if (!row) return { entry: null, pantryDeduction: undefined };
+
+  if (row.status === "eaten") {
+    return { entry: row, pantryDeduction: undefined };
+  }
+
+  const [entry] = await db
+    .update(dailyLogEntries)
+    .set({ status: "eaten" })
+    .where(eq(dailyLogEntries.id, id))
+    .returning();
+
+  let pantryDeduction;
+  if (entry.recipeId) {
+    const already = await hasPantryDeductionForLogEntry(id);
+    if (!already) {
+      pantryDeduction = await deductRecipeFromPantry(entry.recipeId, entry.servings, entry.id);
+    }
+  }
+
+  return { entry, pantryDeduction };
 }
 
 export { getRecipeCost, type RecipeCostResult } from "@/lib/cost/recipe";
