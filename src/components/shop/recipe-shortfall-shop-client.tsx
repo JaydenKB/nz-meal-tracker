@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  appendPantryReviewLines,
+  shoppingItemToReviewLine,
+} from "@/lib/pantry/review-session";
+import { buildShoppingReviewItems } from "@/lib/pantry/shopping-review";
 
 type ShopGroup = {
   store: { name: string } | null;
@@ -13,6 +20,8 @@ type ShopGroup = {
     productName: string;
     packages: number;
     packageDisplay: string;
+    packageSize?: number;
+    packageUnit?: string;
   }[];
 };
 
@@ -25,7 +34,39 @@ export function RecipeShortfallShopClient({
   recipeId: number;
   groups: ShopGroup[];
 }) {
-  const hasItems = groups.some((g) => g.items.length > 0);
+  const router = useRouter();
+  const [checked, setChecked] = useState<Record<number, boolean>>({});
+
+  const needItems = useMemo(() => {
+    const items: ShopGroup["items"][number][] = [];
+    for (const g of groups) {
+      for (const item of g.items) {
+        if (item.packages > 0) items.push(item);
+      }
+    }
+    return items;
+  }, [groups]);
+
+  const hasItems = needItems.length > 0;
+
+  function markAsBought() {
+    const selected = needItems.filter((i) => checked[i.ingredientId]);
+    if (selected.length === 0) return;
+
+    const lines = buildShoppingReviewItems(
+      selected.map((i) => ({
+        ingredientId: i.ingredientId,
+        ingredientName: i.ingredientName,
+        packages: i.packages,
+        neededDisplay: i.neededDisplay,
+        packageSize: i.packageSize,
+        packageUnit: i.packageUnit,
+      })),
+    ).map((l) => shoppingItemToReviewLine(l));
+
+    appendPantryReviewLines(lines);
+    router.push("/shop/pantry/review");
+  }
 
   return (
     <div className="mx-auto max-w-[430px] space-y-5 pb-8">
@@ -56,18 +97,46 @@ export function RecipeShortfallShopClient({
             </h2>
             <div className="divide-y divide-[var(--border)] rounded-[var(--radius-card)] border border-[var(--border)] bg-white">
               {group.items.map((item) => (
-                <div key={`${item.ingredientId}-${item.productName}`} className="px-4 py-3 text-sm">
-                  <p className="font-medium">{item.ingredientName}</p>
-                  <p className="text-[var(--muted)]">
-                    Need {item.neededDisplay} · {item.productName} · {item.packages}×{" "}
-                    {item.packageDisplay}
-                  </p>
-                </div>
+                <label
+                  key={`${item.ingredientId}-${item.productName}`}
+                  className="flex items-start gap-3 px-4 py-3 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(checked[item.ingredientId])}
+                    onChange={() =>
+                      setChecked((p) => ({
+                        ...p,
+                        [item.ingredientId]: !p[item.ingredientId],
+                      }))
+                    }
+                    className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{item.ingredientName}</p>
+                    <p className="text-[var(--muted)]">
+                      Need {item.neededDisplay} · {item.productName} · {item.packages}×{" "}
+                      {item.packageDisplay}
+                    </p>
+                  </div>
+                </label>
               ))}
             </div>
           </section>
         ))
       )}
+
+      {hasItems && (
+        <Button className="w-full" size="lg" onClick={markAsBought}>
+          Mark selected → review &amp; add
+        </Button>
+      )}
+
+      <Link href="/shop">
+        <Button variant="secondary" className="w-full">
+          Main shopping list
+        </Button>
+      </Link>
 
       <Link href={`/recipes/${recipeId}/cook`}>
         <Button variant="outline" className="w-full">

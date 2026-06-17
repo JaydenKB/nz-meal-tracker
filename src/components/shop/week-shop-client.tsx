@@ -6,6 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/section-header";
+import {
+  appendPantryReviewLines,
+  shoppingItemToReviewLine,
+} from "@/lib/pantry/review-session";
+import { buildShoppingReviewItems } from "@/lib/pantry/shopping-review";
 
 type ShopItem = {
   ingredientId: number;
@@ -41,7 +46,6 @@ export function WeekShopClient() {
     shopping: { owned: OwnedItem[]; skippedCount: number };
   } | null>(null);
   const [checked, setChecked] = useState<Record<number, boolean>>({});
-  const [buying, setBuying] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/shopping/week?weekStart=${weekStart}&scope=planned`);
@@ -63,19 +67,21 @@ export function WeekShopClient() {
     return items;
   }, [data]);
 
-  async function markAsBought() {
+  function markAsBought() {
     const selected = needItems.filter((i) => checked[i.ingredientId]);
     if (selected.length === 0) return;
-    setBuying(true);
-    await fetch("/api/pantry/mark-bought", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: selected.map((i) => ({ ingredientId: i.ingredientId, packages: i.packages })),
-      }),
-    });
-    setBuying(false);
-    load();
+
+    const lines = buildShoppingReviewItems(
+      selected.map((i) => ({
+        ingredientId: i.ingredientId,
+        ingredientName: i.ingredientName,
+        packages: i.packages,
+        neededDisplay: i.neededDisplay,
+      })),
+    ).map((l) => shoppingItemToReviewLine(l));
+
+    appendPantryReviewLines(lines);
+    router.push("/shop/pantry/review");
   }
 
   return (
@@ -162,8 +168,8 @@ export function WeekShopClient() {
       ))}
 
       {needItems.length > 0 && (
-        <Button className="w-full" size="lg" disabled={buying} onClick={markAsBought}>
-          Mark selected as bought → pantry
+        <Button className="w-full" size="lg" onClick={markAsBought}>
+          Mark selected → review & add
         </Button>
       )}
 

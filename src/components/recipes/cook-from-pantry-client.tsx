@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ArrowLeft, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
+import { loadPantryReviewSession } from "@/lib/pantry/review-session";
 import type { RecipePantryMatch } from "@/lib/pantry/recipe-match";
 
 type Filter = "all" | "high_protein" | "quick";
@@ -25,7 +26,15 @@ function StatusChip({ match }: { match: RecipePantryMatch }) {
   );
 }
 
-function RecipeRow({ match, showShortfall }: { match: RecipePantryMatch; showShortfall?: boolean }) {
+function RecipeRow({
+  match,
+  showShortfall,
+  highlighted,
+}: {
+  match: RecipePantryMatch;
+  showShortfall?: boolean;
+  highlighted?: boolean;
+}) {
   const href =
     match.cookability === "almost"
       ? `/recipes/${match.recipeId}/pantry`
@@ -34,7 +43,11 @@ function RecipeRow({ match, showShortfall }: { match: RecipePantryMatch; showSho
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-white px-3.5 py-3"
+      className={`flex items-center gap-3 rounded-[var(--radius-card)] border px-3.5 py-3 ${
+        highlighted
+          ? "border-[var(--success)]/50 bg-[var(--green-soft)]"
+          : "border-[var(--border)] bg-white"
+      }`}
     >
       <RecipeIcon index={match.recipeId} />
       <div className="min-w-0 flex-1">
@@ -95,13 +108,26 @@ export function CookFromPantryClient({
   almost,
   notYet,
   pantryIngredientIds,
+  highlightFresh = false,
 }: {
   cookNow: RecipePantryMatch[];
   almost: RecipePantryMatch[];
   notYet: RecipePantryMatch[];
   pantryIngredientIds: number[];
+  highlightFresh?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [highlightIds, setHighlightIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!highlightFresh) return;
+    const session = loadPantryReviewSession();
+    if (session.lastCookNowRecipeIds?.length) {
+      setHighlightIds(session.lastCookNowRecipeIds);
+    }
+  }, [highlightFresh]);
+
+  const highlightSet = useMemo(() => new Set(highlightIds), [highlightIds]);
 
   const applyFilter = (list: RecipePantryMatch[]) => {
     if (filter === "high_protein") return list.filter((r) => r.proteinG >= 25);
@@ -116,6 +142,16 @@ export function CookFromPantryClient({
       notYet: applyFilter(notYet),
     }),
     [cookNow, almost, notYet, filter],
+  );
+
+  const freshCookNow = useMemo(
+    () => filtered.cookNow.filter((m) => highlightSet.has(m.recipeId)),
+    [filtered.cookNow, highlightSet],
+  );
+
+  const otherCookNow = useMemo(
+    () => filtered.cookNow.filter((m) => !highlightSet.has(m.recipeId)),
+    [filtered.cookNow, highlightSet],
   );
 
   const generateHref =
@@ -153,9 +189,26 @@ export function CookFromPantryClient({
         ))}
       </div>
 
-      {filtered.cookNow.length > 0 && (
+      {highlightFresh && freshCookNow.length > 0 && (
+        <div className="rounded-xl border border-[var(--success)]/30 bg-[var(--green-soft)] px-4 py-3 text-sm">
+          <p className="font-medium text-[var(--primary)]">
+            {freshCookNow.length} new recipe{freshCookNow.length === 1 ? "" : "s"} you can cook now
+          </p>
+          <p className="mt-0.5 text-[var(--muted)]">From what you just added to pantry</p>
+        </div>
+      )}
+
+      {freshCookNow.length > 0 && (
+        <Section dotColor="bg-[var(--success)]" title="Newly available">
+          {freshCookNow.map((m) => (
+            <RecipeRow key={m.recipeId} match={m} highlighted />
+          ))}
+        </Section>
+      )}
+
+      {otherCookNow.length > 0 && (
         <Section dotColor="bg-[var(--success)]" title="Cook now">
-          {filtered.cookNow.map((m) => (
+          {otherCookNow.map((m) => (
             <RecipeRow key={m.recipeId} match={m} />
           ))}
         </Section>

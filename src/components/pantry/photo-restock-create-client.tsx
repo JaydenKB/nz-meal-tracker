@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AiLoader } from "@/components/ui/ai-loader";
 import type { DetectedItem } from "@/lib/import/types";
+import {
+  appendPantryReviewLines,
+  libraryItemToReviewLine,
+} from "@/lib/pantry/review-session";
 import { play } from "@/lib/sfx";
 
 const statInputClass =
@@ -46,6 +50,7 @@ export function PhotoRestockCreateClient() {
   const searchParams = useSearchParams();
   const hintName = searchParams.get("name") ?? "";
   const seedBarcode = searchParams.get("barcode") ?? "";
+  const hub = searchParams.get("hub") === "1";
 
   const [front, setFront] = useState<LabelImage>(null);
   const [back, setBack] = useState<LabelImage>(null);
@@ -115,19 +120,27 @@ export function PhotoRestockCreateClient() {
           pantryQuantity: draft.packageSize,
           pantryUnit: "g",
           barcode: seedBarcode || undefined,
+          addToPantry: !hub,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
 
-      play("log");
-      if (data.pantryWarning) {
-        setError(data.pantryWarning);
-        setTimeout(() => router.push("/shop/pantry/restock"), 1500);
-      } else {
-        router.push("/shop/pantry");
-        router.refresh();
+      if (hub && data.ingredientId) {
+        appendPantryReviewLines([
+          libraryItemToReviewLine({
+            ingredientId: data.ingredientId,
+            name: draft.name,
+            quantity: draft.packageSize,
+            unit: "g",
+            source: "label",
+          }),
+        ]);
       }
+
+      play("log");
+      router.push(hub ? "/shop/pantry/review" : "/shop/pantry");
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -139,7 +152,7 @@ export function PhotoRestockCreateClient() {
     <div className="mx-auto max-w-[430px] space-y-5 pb-28">
       <div className="flex items-center gap-3">
         <Link
-          href="/shop/pantry/restock"
+          href="/shop/pantry/add"
           className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-white"
           aria-label="Back"
         >

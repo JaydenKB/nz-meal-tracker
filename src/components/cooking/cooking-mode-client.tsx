@@ -29,7 +29,7 @@ import {
 } from "@/lib/cooking/parse-duration";
 import { useWakeLock } from "@/lib/cooking/use-wake-lock";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
-import { todayString } from "@/lib/log/compute";
+import { shiftDate, todayString } from "@/lib/log/compute";
 import { playTimerDoneSound } from "@/lib/sfx";
 import { logMealWithRewards } from "@/lib/sfx/log-rewards";
 
@@ -49,12 +49,14 @@ export function CookingModeClient({
   servings,
   steps,
   allIngredients,
+  lowStockHints = [],
 }: {
   recipeId: number;
   recipeName: string;
   servings: number;
   steps: string[];
   allIngredients: StepIngredient[];
+  lowStockHints?: { ingredientId: number; name: string }[];
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"cooking" | "complete">("cooking");
@@ -288,6 +290,26 @@ export function CookingModeClient({
               Back to recipe
             </Button>
           </Link>
+          <Link href={`/log?recipeId=${recipeId}&status=planned&date=${shiftDate(todayString(), 1)}`} className="block">
+            <Button variant="secondary" size="lg" className="w-full">
+              Plan this again
+            </Button>
+          </Link>
+          {lowStockHints.length > 0 && (
+            <Link href={`/shop/recipe/${recipeId}`} className="block">
+              <Button variant="outline" size="lg" className="w-full">
+                Running low on {lowStockHints.map((h) => h.name).slice(0, 2).join(", ")}
+                {lowStockHints.length > 2 ? "…" : ""} — add to list
+              </Button>
+            </Link>
+          )}
+          {lowStockHints.length === 0 && (
+            <Link href="/shop/pantry/add" className="block">
+              <Button variant="outline" size="lg" className="w-full">
+                Restock pantry
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     );

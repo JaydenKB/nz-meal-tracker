@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CookingModeClient } from "@/components/cooking/cooking-mode-client";
 import { parseMethodStepsForCooking } from "@/lib/recipes/format-method";
+import { getPostCookLowStockHints } from "@/lib/pantry/deduct";
 import { getRecipeWithDetails } from "@/lib/queries";
 
 export default async function CookingModePage({
@@ -24,6 +25,11 @@ export default async function CookingModePage({
     unit: line.unit,
   }));
 
+  const lowStockHints = await getPostCookLowStockHints(
+    details.recipe.id,
+    details.recipe.servings,
+  );
+
   return (
     <CookingModeClient
       recipeId={details.recipe.id}
@@ -31,6 +37,7 @@ export default async function CookingModePage({
       servings={details.recipe.servings}
       steps={steps}
       allIngredients={allIngredients}
+      lowStockHints={lowStockHints}
     />
   );
 }

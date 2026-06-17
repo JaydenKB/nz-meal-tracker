@@ -77,6 +77,7 @@ type SaveBody = {
   pantryQuantity?: number;
   pantryUnit?: string;
   barcode?: string;
+  addToPantry?: boolean;
 };
 
 /** Create ingredient from label draft and add to pantry. */
@@ -110,7 +111,8 @@ export async function POST(request: Request) {
     .returning({ id: ingredients.id });
 
   let pantryWarning: string | undefined;
-  if (pantryQuantity > 0) {
+  const shouldAddPantry = body.addToPantry !== false;
+  if (shouldAddPantry && pantryQuantity > 0) {
     const full = await db
       .select()
       .from(ingredients)

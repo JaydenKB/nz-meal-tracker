@@ -1,5 +1,5 @@
 import { getRecipeWithDetails } from "@/lib/queries";
-import { deductCanonicalAmount } from "@/lib/pantry/queries";
+import { deductCanonicalAmount, getPantryMap } from "@/lib/pantry/queries";
 import { toCanonicalAmount } from "@/lib/pantry/canonical";
 
 export type PantryDeductionResult = {
@@ -65,4 +65,34 @@ export async function deductRecipeFromPantry(
   }
 
   return results;
+}
+
+/** Ingredients likely low or depleted after cooking this recipe (for finish-screen hints). */
+export async function getPostCookLowStockHints(
+  recipeId: number,
+  servings: number,
+): Promise<{ ingredientId: number; name: string }[]> {
+  const details = await getRecipeWithDetails(recipeId);
+  if (!details) return [];
+
+  const pantryMap = await getPantryMap();
+  const scale = servings / Math.max(1, details.recipe.servings);
+  const hints: { ingredientId: number; name: string }[] = [];
+
+  for (const line of details.lines) {
+    const pantry = pantryMap.get(line.ingredient.id);
+    if (!pantry || pantry.isStaple) continue;
+
+    const scaledQty = line.quantity * scale;
+    const converted = toCanonicalAmount(scaledQty, line.unit, line.ingredient);
+    if (!converted.ok) continue;
+
+    const remaining = pantry.quantity - converted.amount;
+    const threshold = pantry.lowThreshold ?? converted.amount * 0.25;
+    if (remaining <= threshold || remaining <= 0) {
+      hints.push({ ingredientId: line.ingredient.id, name: line.ingredient.name });
+    }
+  }
+
+  return hints;
 }

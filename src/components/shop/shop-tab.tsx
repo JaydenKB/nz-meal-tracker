@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Camera, ChevronRight, Package, ShoppingBasket, Store } from "lucide-react";
+import { Camera, ChevronRight, Package, Plus, ShoppingBasket, Store } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/section-header";
+import {
+  appendPantryReviewLines,
+  shoppingItemToReviewLine,
+} from "@/lib/pantry/review-session";
+import { buildShoppingReviewItems } from "@/lib/pantry/shopping-review";
 
 type ShopItem = {
   ingredientId: number;
@@ -48,9 +54,9 @@ export function ShopTabClient({
   skippedCount: number;
   grandTotal: number | null;
 }) {
+  const router = useRouter();
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [reAdded, setReAdded] = useState<Record<number, boolean>>({});
-  const [buying, setBuying] = useState(false);
   const [buyMessage, setBuyMessage] = useState<string | null>(null);
 
   const needItems = useMemo(() => {
@@ -78,30 +84,18 @@ export function ShopTabClient({
       return;
     }
 
-    setBuying(true);
-    setBuyMessage(null);
-    try {
-      const res = await fetch("/api/pantry/mark-bought", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          batchId,
-          items: selected.map((i) => ({
-            ingredientId: i.ingredientId,
-            quantity: i.packages * i.packageSize,
-            unit: i.packageUnit,
-          })),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed");
-      setBuyMessage(`Added ${data.added} item${data.added === 1 ? "" : "s"} to pantry`);
-      setChecked({});
-      window.location.reload();
-    } catch (e) {
-      setBuyMessage(e instanceof Error ? e.message : "Failed to update pantry");
-      setBuying(false);
-    }
+    const lines = buildShoppingReviewItems(
+      selected.map((i) => ({
+        ingredientId: i.ingredientId,
+        ingredientName: i.ingredientName,
+        packages: i.packages,
+        packageSize: i.packageSize,
+        packageUnit: i.packageUnit,
+      })),
+    ).map((l) => shoppingItemToReviewLine(l));
+
+    appendPantryReviewLines(lines);
+    router.push("/shop/pantry/review");
   }
 
   return (
@@ -115,17 +109,17 @@ export function ShopTabClient({
             My pantry
           </Button>
         </Link>
-        <Link href="/shop/pantry/restock">
+        <Link href="/shop/pantry/add">
           <Button variant="ai" className="w-full">
-            <Camera className="h-4 w-4" />
-            Photo restock
+            <Plus className="h-4 w-4" />
+            Add to pantry
           </Button>
         </Link>
       </div>
 
       <Link href="/ingredients/import">
         <Button variant="secondary" className="w-full">
-          Scan receipt
+          Scan receipt (store prices)
         </Button>
       </Link>
 
@@ -238,8 +232,8 @@ export function ShopTabClient({
             )}
 
             {needItems.length > 0 && (
-              <Button size="lg" className="w-full" disabled={buying} onClick={() => void markAsBought()}>
-                {buying ? "Updating pantry…" : "Mark as bought → add to pantry"}
+              <Button size="lg" className="w-full" onClick={() => void markAsBought()}>
+                Mark selected → review & add
               </Button>
             )}
 

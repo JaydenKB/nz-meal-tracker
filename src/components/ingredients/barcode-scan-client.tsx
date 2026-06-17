@@ -14,6 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 import type { BarcodeDraft, BarcodeLookupResponse } from "@/lib/import/barcode-types";
+import {
+  appendPantryReviewLines,
+  barcodeToReviewLine,
+} from "@/lib/pantry/review-session";
 import { play } from "@/lib/sfx";
 
 type Step = "scan" | "result" | "not_found" | "offline" | "edit";
@@ -25,7 +29,8 @@ export function BarcodeScanClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromPantry = searchParams.get("from") === "pantry";
-  const backHref = fromPantry ? "/shop/pantry" : "/ingredients";
+  const useHub = searchParams.get("hub") === "1" || fromPantry;
+  const backHref = useHub ? "/shop/pantry/add" : "/ingredients";
 
   const [step, setStep] = useState<Step>("scan");
   const [manualCode, setManualCode] = useState("");
@@ -118,8 +123,61 @@ export function BarcodeScanClient() {
     await lookup(code);
   }
 
+  async function handleAddToReview() {
+    if (!draft) return;
+    setSaving(true);
+    setLookupError(null);
+
+    try {
+      let ingredientId = localIngredientId;
+      if (!ingredientId) {
+        const res = await fetch("/api/ingredients/barcode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            barcode,
+            name: draft.name,
+            calories: draft.calories ?? 0,
+            proteinG: draft.proteinG ?? 0,
+            fatG: draft.fatG ?? 0,
+            carbsG: draft.carbsG ?? 0,
+            packageSize: draft.packageSize ?? 100,
+            packageUnit: draft.packageUnit,
+            isProcessed: draft.isProcessed,
+            packageCount,
+            addToPantry: false,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Save failed");
+        ingredientId = data.ingredientId;
+      }
+
+      const qty = packageCount * (draft.packageSize ?? 100);
+      appendPantryReviewLines([
+        barcodeToReviewLine({
+          ingredientId: ingredientId!,
+          name: draft.name,
+          quantity: qty,
+          unit: draft.packageUnit,
+          barcode,
+        }),
+      ]);
+      router.push("/shop/pantry/review");
+    } catch (e) {
+      setLookupError(e instanceof Error ? e.message : "Failed to add");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleSave() {
     if (!draft) return;
+
+    if (useHub) {
+      await handleAddToReview();
+      return;
+    }
 
     if (localIngredientId && !fromPantry) {
       router.push(`/ingredients/${localIngredientId}`);
@@ -375,10 +433,12 @@ export function BarcodeScanClient() {
             <div className="mx-auto max-w-[430px] space-y-2">
               <Button className="w-full" disabled={saving} onClick={() => void handleSave()}>
                 {saving
-                  ? "Saving…"
-                  : fromPantry || localIngredientId
-                    ? "Save ingredient & add to pantry"
-                    : "Save ingredient"}
+                  ? "Adding…"
+                  : useHub
+                    ? "Add to review"
+                    : fromPantry || localIngredientId
+                      ? "Save ingredient & add to pantry"
+                      : "Save ingredient"}
               </Button>
               {!editMode && (
                 <Button variant="secondary" className="w-full" onClick={() => setEditMode(true)}>

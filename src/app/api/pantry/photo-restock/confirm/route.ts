@@ -79,6 +79,8 @@ export async function POST(request: Request) {
 
   revalidatePath("/shop");
   revalidatePath("/shop/pantry");
+  revalidatePath("/recipes/cook-from-pantry");
+  revalidatePath("/");
 
   return NextResponse.json({
     added: results.length,

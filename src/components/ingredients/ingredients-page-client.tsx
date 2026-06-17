@@ -56,18 +56,20 @@ export function IngredientsPageClient({
         />
       </div>
 
-      <Link href="/ingredients/barcode">
+      <Link href="/shop/pantry/add">
         <Button className="w-full">
           <Barcode className="h-4 w-4" />
-          Scan barcode
+          Add to pantry
         </Button>
       </Link>
 
       <div className="grid grid-cols-2 gap-2.5">
-        <Button variant="secondary" className="w-full" onClick={() => setShowAdd(!showAdd)}>
-          <Plus className="h-4 w-4" strokeWidth={2.5} />
-          Add manually
-        </Button>
+        <Link href="/ingredients/add">
+          <Button variant="secondary" className="w-full">
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
+            Add manually
+          </Button>
+        </Link>
         <Link
           href="/ingredients/import"
           className={cn(

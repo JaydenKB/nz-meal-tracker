@@ -33,8 +33,14 @@ export function LogPickerClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialDate = searchParams.get("date") ?? todayString();
+  const preselectRecipeId = searchParams.get("recipeId");
+  const preselectStatus = searchParams.get("status") as LogStatus | null;
   const [logDate, setLogDate] = useState(initialDate);
-  const [status, setStatus] = useState<LogStatus>(() => inferLogStatus(initialDate));
+  const [status, setStatus] = useState<LogStatus>(() =>
+    preselectStatus === "planned" || preselectStatus === "eaten"
+      ? preselectStatus
+      : inferLogStatus(initialDate),
+  );
   const [mealType, setMealType] = useState<MealType>(() => mealTypeFromTime());
   const [filter, setFilter] = useState<Filter>("recipes");
   const [query, setQuery] = useState("");
@@ -60,7 +66,16 @@ export function LogPickerClient() {
 
   useEffect(() => {
     setStatus(inferLogStatus(logDate));
-  }, [logDate]);
+    if (preselectStatus === "planned" && logDate > todayString()) {
+      setStatus("planned");
+    }
+  }, [logDate, preselectStatus]);
+
+  const preselectRecipe = useMemo(() => {
+    const id = Number(preselectRecipeId);
+    if (!Number.isFinite(id)) return null;
+    return recipes.find((r) => r.id === id) ?? null;
+  }, [preselectRecipeId, recipes]);
 
   const items = useMemo(() => {
     const list = filter === "ingredients" ? ingredients : recipes;
@@ -115,6 +130,13 @@ export function LogPickerClient() {
           <X className="h-5 w-5" strokeWidth={1.75} />
         </Link>
       </header>
+
+      {preselectRecipe && (
+        <div className="rounded-xl border border-[#534ab7]/30 bg-[var(--ai-soft)] px-4 py-3 text-sm">
+          <p className="font-medium">Plan {preselectRecipe.name}</p>
+          <p className="text-[var(--muted)]">Pick a date and tap the recipe below to add it.</p>
+        </div>
+      )}
 
       <div className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--beige)] px-4 py-3">
         <button
