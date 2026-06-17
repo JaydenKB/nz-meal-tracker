@@ -11,6 +11,7 @@ import type { RawScannedItem } from "@/lib/import/types";
 import { ollamaGenerateText } from "@/lib/ollama/client";
 import { scanSingleImageWithRetry } from "@/lib/import/ollama-vision";
 import { AiProviderError } from "@/lib/ai/errors";
+import { withAiCall, aiTimeoutMs } from "@/lib/ai/handler";
 import {
   effectiveAiProvider,
   providerDisplayName,
@@ -44,65 +45,66 @@ function missingOpenAIKeyError(): Error {
 /** General-purpose JSON text generation (suggestions, etc.) — not recipe-structured. */
 export async function aiGenerateText(settings: AppSettings, prompt: string): Promise<string> {
   const provider = effectiveAiProvider(settings);
+  return withAiCall(
+    async () => {
+      if (provider === "openai") {
+        const apiKey = resolveOpenAIApiKey(settings);
+        if (!apiKey) throw missingOpenAIKeyError();
+        const client = createOpenAIClient(apiKey);
+        return openaiGenerateJson(client, settings.openaiTextModel, prompt);
+      }
 
-  if (provider === "openai") {
-    const apiKey = resolveOpenAIApiKey(settings);
-    if (!apiKey) throw missingOpenAIKeyError();
-    const client = createOpenAIClient(apiKey);
-    return openaiGenerateJson(client, settings.openaiTextModel, prompt);
-  }
+      if (provider === "anthropic") {
+        const apiKey = resolveAnthropicApiKey(settings);
+        if (!apiKey) {
+          throw new AiProviderError(
+            "not_configured",
+            "Anthropic API key not configured.",
+            "anthropic",
+          );
+        }
+        const recipes = await anthropicGenerateRecipes(
+          createAnthropicClient(apiKey),
+          settings.anthropicTextModel,
+          prompt,
+        );
+        return JSON.stringify({ recipes });
+      }
 
-  if (provider === "anthropic") {
-    const apiKey = resolveAnthropicApiKey(settings);
-    if (!apiKey) {
-      throw new AiProviderError(
-        "not_configured",
-        "Anthropic API key not configured.",
-        "anthropic",
-      );
-    }
-    const recipes = await anthropicGenerateRecipes(
-      createAnthropicClient(apiKey),
-      settings.anthropicTextModel,
-      prompt,
-    );
-    return JSON.stringify({ recipes });
-  }
-
-  return ollamaGenerateText(settings.ollamaBaseUrl, settings.ollamaModel, prompt, {
-    formatJson: true,
-    temperature: 0.85,
-  });
+      return ollamaGenerateText(settings.ollamaBaseUrl, settings.ollamaModel, prompt, {
+        formatJson: true,
+        temperature: 0.85,
+      });
+    },
+    { provider, timeoutMs: aiTimeoutMs() },
+  );
 }
 
 /** Plain prose generation (cooking step elaboration, etc.) — no JSON contract. */
 export async function aiGenerateProse(settings: AppSettings, prompt: string): Promise<string> {
   const provider = effectiveAiProvider(settings);
-
-  if (provider === "openai") {
-    const apiKey = resolveOpenAIApiKey(settings);
-    if (!apiKey) throw missingOpenAIKeyError();
-    const client = createOpenAIClient(apiKey);
-    return openaiGenerateProse(client, settings.openaiTextModel, prompt);
-  }
-
-  if (provider === "anthropic") {
-    const apiKey = resolveAnthropicApiKey(settings);
-    if (!apiKey) {
-      throw new AiProviderError(
-        "not_configured",
-        "Anthropic API key not configured.",
-        "anthropic",
-      );
-    }
-    return anthropicGenerateProse(createAnthropicClient(apiKey), settings.anthropicTextModel, prompt);
-  }
-
-  return ollamaGenerateText(settings.ollamaBaseUrl, settings.ollamaModel, prompt, {
-    formatJson: false,
-    temperature: 0.75,
-    top_p: 0.9,
-  });
+  return withAiCall(
+    async () => {
+      if (provider === "openai") {
+        const apiKey = resolveOpenAIApiKey(settings);
+        if (!apiKey) throw missingOpenAIKeyError();
+        return openaiGenerateProse(createOpenAIClient(apiKey), settings.openaiTextModel, prompt);
+      }
+      if (provider === "anthropic") {
+        const apiKey = resolveAnthropicApiKey(settings);
+        if (!apiKey) {
+          throw new AiProviderError("not_configured", "Anthropic API key not configured.", "anthropic");
+        }
+        return anthropicGenerateProse(createAnthropicClient(apiKey), settings.anthropicTextModel, prompt);
+      }
+      return ollamaGenerateText(settings.ollamaBaseUrl, settings.ollamaModel, prompt, {
+        formatJson: false,
+        temperature: 0.75,
+        top_p: 0.9,
+      });
+    },
+    { provider, timeoutMs: aiTimeoutMs() },
+  );
 }
 
 export async function aiScanSingleImage(
@@ -110,30 +112,25 @@ export async function aiScanSingleImage(
   storeName: string,
   image: string,
 ): Promise<RawScannedItem[]> {
-  if (effectiveAiProvider(settings) === "openai") {
-    const apiKey = resolveOpenAIApiKey(settings);
-    if (!apiKey) throw missingOpenAIKeyError();
-    const client = createOpenAIClient(apiKey);
-    const prompt = buildScanPrompt(storeName, true);
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
+  const provider = effectiveAiProvider(settings);
+  return withAiCall(
+    async () => {
+      if (provider === "openai") {
+        const apiKey = resolveOpenAIApiKey(settings);
+        if (!apiKey) throw missingOpenAIKeyError();
+        const client = createOpenAIClient(apiKey);
+        const prompt = buildScanPrompt(storeName, true);
         const raw = await openaiVisionJson(client, settings.openaiVisionModel, prompt, image);
         return parseScanJson(raw);
-      } catch (e) {
-        lastError = e instanceof Error ? e : new Error("OpenAI scan failed");
       }
-    }
-
-    throw lastError ?? new Error("Failed to scan screenshot with OpenAI");
-  }
-
-  return scanSingleImageWithRetry(
-    settings.ollamaBaseUrl,
-    settings.ollamaVisionModel,
-    storeName,
-    image,
+      return scanSingleImageWithRetry(
+        settings.ollamaBaseUrl,
+        settings.ollamaVisionModel,
+        storeName,
+        image,
+      );
+    },
+    { provider, timeoutMs: aiTimeoutMs(true), retries: 1 },
   );
 }
 
@@ -141,29 +138,17 @@ export async function aiDetectGroceries(
   settings: AppSettings,
   image: string,
 ): Promise<DetectedGrocery[]> {
-  const prompt = buildGroceryDetectPrompt();
   const provider = effectiveAiProvider(settings);
-
-  if (provider === "openai") {
-    const apiKey = resolveOpenAIApiKey(settings);
-    if (!apiKey) throw missingOpenAIKeyError();
-    const client = createOpenAIClient(apiKey);
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
+  return withAiCall(
+    async () => {
+      const prompt = buildGroceryDetectPrompt();
+      if (provider === "openai") {
+        const apiKey = resolveOpenAIApiKey(settings);
+        if (!apiKey) throw missingOpenAIKeyError();
+        const client = createOpenAIClient(apiKey);
         const raw = await openaiVisionJson(client, settings.openaiVisionModel, prompt, image);
         return parseGroceryDetectJson(raw);
-      } catch (e) {
-        lastError = e instanceof Error ? e : new Error("OpenAI grocery detect failed");
       }
-    }
-    throw lastError ?? new Error("Failed to detect groceries with OpenAI");
-  }
-
-  let lastError: Error | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
       const raw = await callOllamaVision(
         settings.ollamaBaseUrl,
         settings.ollamaVisionModel,
@@ -171,11 +156,9 @@ export async function aiDetectGroceries(
         [image],
       );
       return parseGroceryDetectJson(raw);
-    } catch (e) {
-      lastError = e instanceof Error ? e : new Error("Grocery detect parse failed");
-    }
-  }
-  throw lastError ?? new Error("Failed to detect groceries");
+    },
+    { provider, timeoutMs: aiTimeoutMs(true), retries: 1 },
+  );
 }
 
 export async function aiScanProductLabels(
@@ -183,35 +166,18 @@ export async function aiScanProductLabels(
   images: string[],
   hintName?: string,
 ): Promise<RawScannedItem> {
-  if (images.length === 0) throw new Error("At least one label image required");
-  const prompt = buildLabelScanPrompt(hintName);
+  if (images.length === 0) throw new AiProviderError("provider_error", "At least one label image required", "local");
   const provider = effectiveAiProvider(settings);
-
-  if (provider === "openai") {
-    const apiKey = resolveOpenAIApiKey(settings);
-    if (!apiKey) throw missingOpenAIKeyError();
-    const client = createOpenAIClient(apiKey);
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const raw = await openaiVisionJsonMulti(
-          client,
-          settings.openaiVisionModel,
-          prompt,
-          images,
-        );
+  return withAiCall(
+    async () => {
+      const prompt = buildLabelScanPrompt(hintName);
+      if (provider === "openai") {
+        const apiKey = resolveOpenAIApiKey(settings);
+        if (!apiKey) throw missingOpenAIKeyError();
+        const client = createOpenAIClient(apiKey);
+        const raw = await openaiVisionJsonMulti(client, settings.openaiVisionModel, prompt, images);
         return parseLabelScanJson(raw);
-      } catch (e) {
-        lastError = e instanceof Error ? e : new Error("OpenAI label scan failed");
       }
-    }
-    throw lastError ?? new Error("Failed to scan product labels with OpenAI");
-  }
-
-  let lastError: Error | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
       const raw = await callOllamaVision(
         settings.ollamaBaseUrl,
         settings.ollamaVisionModel,
@@ -219,11 +185,9 @@ export async function aiScanProductLabels(
         images,
       );
       return parseLabelScanJson(raw);
-    } catch (e) {
-      lastError = e instanceof Error ? e : new Error("Label scan parse failed");
-    }
-  }
-  throw lastError ?? new Error("Failed to scan product labels");
+    },
+    { provider, timeoutMs: aiTimeoutMs(true), retries: 1 },
+  );
 }
 
 export function aiProviderLabel(settings: AppSettings): string {

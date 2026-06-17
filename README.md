@@ -96,7 +96,19 @@ Set a DHCP reservation for your desktop in your router so the LAN URL doesn't ch
 |----------|-------------|
 | `OPENAI_API_KEY` | Optional — for AI food image generation |
 | `DATABASE_URL` | SQLite path (default: `file:./local.db`) |
+| `BACKUP_DIR` | Override default backup folder (default: `~/nz-meal-tracker-backups`) |
 | `PORT` | Server port (default: 3000) |
+
+## Backups
+
+Your data lives in a single SQLite file (`local.db`). **Settings → Backups** configures automatic copies:
+
+- Uses SQLite's **online backup API** (not a raw file copy) plus an integrity check
+- Default folder: `~/nz-meal-tracker-backups` (outside the project tree)
+- Daily schedule + debounced backup after meaningful writes
+- Retention: last 14 copies (configurable)
+
+**Strongly recommended:** point the backup directory at a **second drive or machine** (e.g. your Mac Mini over LAN, or a synced folder) so a single disk failure doesn't lose both the live DB and all backups. Export/import and one-click restore are available from the same screen.
 
 ## Seed Data
 

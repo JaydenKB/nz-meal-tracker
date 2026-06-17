@@ -9,6 +9,7 @@ import {
   getLogEntriesForDate,
 } from "@/lib/log/queries";
 import { deductRecipeFromPantry } from "@/lib/pantry/deduct";
+import { notifyDbWrite } from "@/lib/backup/trigger";
 
 export const runtime = "nodejs";
 
@@ -77,5 +78,6 @@ export async function POST(request: Request) {
     );
   }
 
+  notifyDbWrite();
   return NextResponse.json({ entry, pantryDeduction }, { status: 201 });
 }

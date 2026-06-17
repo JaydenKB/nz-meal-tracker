@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { notifyDbWrite } from "@/lib/backup/trigger";
 import {
   batches,
   ingredients,
@@ -30,11 +31,22 @@ export async function createIngredient(formData: FormData) {
   });
 
   revalidatePath("/ingredients");
+  notifyDbWrite();
+}
+
+export async function archiveIngredient(id: number) {
+  await db
+    .update(ingredients)
+    .set({ archivedAt: new Date().toISOString() })
+    .where(eq(ingredients.id, id));
+  revalidatePath("/ingredients");
+  notifyDbWrite();
 }
 
 export async function deleteIngredient(id: number) {
   await db.delete(ingredients).where(eq(ingredients.id, id));
   revalidatePath("/ingredients");
+  notifyDbWrite();
 }
 
 export async function createStore(formData: FormData) {
@@ -49,6 +61,18 @@ export async function createStore(formData: FormData) {
   revalidatePath("/stores");
   revalidatePath("/ingredients/import");
   revalidatePath("/shop");
+  notifyDbWrite();
+}
+
+export async function archiveStore(id: number) {
+  await db
+    .update(stores)
+    .set({ archivedAt: new Date().toISOString() })
+    .where(eq(stores.id, id));
+  revalidatePath("/stores");
+  revalidatePath("/ingredients/import");
+  revalidatePath("/shop");
+  notifyDbWrite();
 }
 
 export async function deleteStore(id: number) {
@@ -56,6 +80,7 @@ export async function deleteStore(id: number) {
   revalidatePath("/stores");
   revalidatePath("/ingredients/import");
   revalidatePath("/shop");
+  notifyDbWrite();
 }
 
 export async function createStoreProduct(formData: FormData) {
@@ -124,9 +149,20 @@ export async function createBatch(formData: FormData) {
   redirect(`/batches/${batch.id}`);
 }
 
+export async function archiveRecipe(id: number) {
+  await db
+    .update(recipes)
+    .set({ archivedAt: new Date().toISOString() })
+    .where(eq(recipes.id, id));
+  revalidatePath("/");
+  revalidatePath("/recipes");
+  notifyDbWrite();
+}
+
 export async function deleteRecipe(id: number) {
   await db.delete(recipes).where(eq(recipes.id, id));
   revalidatePath("/");
+  notifyDbWrite();
   redirect("/");
 }
 

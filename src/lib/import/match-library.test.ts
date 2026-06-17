@@ -19,6 +19,7 @@ function ing(id: number, name: string): Ingredient {
     gramsPerUnit: null,
     mlPerGram: null,
     barcode: null,
+    archivedAt: null,
   };
 }
 

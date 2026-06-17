@@ -7,6 +7,7 @@ import type {
   RestockConfirmItem,
   RestockConfirmWarning,
 } from "@/lib/import/photo-restock-types";
+import { notifyDbWrite } from "@/lib/backup/trigger";
 import { upsertPantryStock } from "@/lib/pantry/queries";
 import { toCanonicalAmount } from "@/lib/pantry/canonical";
 
@@ -20,9 +21,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No items to add" }, { status: 400 });
   }
 
-  const results = [];
   const warnings: RestockConfirmWarning[] = [];
   const errors: string[] = [];
+  const toAdd: {
+    clientId?: string;
+    ingredientId: number;
+    quantity: number;
+    unit: "g" | "ml" | "each";
+  }[] = [];
 
   for (const item of items) {
     const ingredientId = Number(item.ingredientId);
@@ -64,16 +70,40 @@ export async function POST(request: Request) {
       continue;
     }
 
+    toAdd.push({
+      clientId: item.clientId,
+      ingredientId,
+      quantity: converted.amount,
+      unit: converted.unit,
+    });
+  }
+
+  let results: Awaited<ReturnType<typeof upsertPantryStock>>[] = [];
+
+  if (toAdd.length > 0) {
     try {
-      const row = await upsertPantryStock({
-        ingredientId,
-        quantity: converted.amount,
-        unit: converted.unit,
-        reason: "bought",
+      results = await db.transaction(async () => {
+        const rows = [];
+        for (const entry of toAdd) {
+          rows.push(
+            await upsertPantryStock({
+              ingredientId: entry.ingredientId,
+              quantity: entry.quantity,
+              unit: entry.unit,
+              reason: "bought",
+            }),
+          );
+        }
+        return rows;
       });
-      results.push(row);
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : "Failed to add item");
+      return NextResponse.json(
+        {
+          error: error instanceof Error ? error.message : "Failed to add items",
+          added: 0,
+        },
+        { status: 500 },
+      );
     }
   }
 
@@ -81,6 +111,7 @@ export async function POST(request: Request) {
   revalidatePath("/shop/pantry");
   revalidatePath("/recipes/cook-from-pantry");
   revalidatePath("/");
+  notifyDbWrite();
 
   return NextResponse.json({
     added: results.length,

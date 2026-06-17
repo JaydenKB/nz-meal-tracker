@@ -67,6 +67,14 @@ export async function updateAppSettings(data: Partial<AppSettings>) {
       anthropicApiKey:
         data.anthropicApiKey !== undefined ? data.anthropicApiKey : current.anthropicApiKey,
       anthropicTextModel: data.anthropicTextModel ?? current.anthropicTextModel,
+      backupEnabled: data.backupEnabled ?? current.backupEnabled,
+      backupDirectory:
+        data.backupDirectory !== undefined ? data.backupDirectory : current.backupDirectory,
+      backupRetentionCount: data.backupRetentionCount ?? current.backupRetentionCount,
+      backupFrequency: data.backupFrequency ?? current.backupFrequency,
+      lastBackupAt: data.lastBackupAt ?? current.lastBackupAt,
+      lastBackupStatus: data.lastBackupStatus ?? current.lastBackupStatus,
+      lastBackupError: data.lastBackupError ?? current.lastBackupError,
     })
     .where(eq(appSettings.id, current.id));
   return getAppSettings();

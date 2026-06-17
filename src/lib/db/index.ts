@@ -6,11 +6,27 @@ import * as schema from "./schema";
 
 const dbPath = process.env.DATABASE_URL?.replace("file:", "") ?? path.join(process.cwd(), "local.db");
 
-const sqlite = new Database(dbPath);
+let sqlite = new Database(dbPath);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 
-export const db = drizzle(sqlite, { schema });
+export function getDbPath(): string {
+  return dbPath;
+}
+
+export function getSqlite(): Database.Database {
+  return sqlite;
+}
+
+export function reopenDatabase(): void {
+  sqlite.close();
+  sqlite = new Database(dbPath);
+  sqlite.pragma("journal_mode = WAL");
+  sqlite.pragma("foreign_keys = ON");
+  db = drizzle(sqlite, { schema });
+}
+
+export let db = drizzle(sqlite, { schema });
 
 export function initDb() {
   sqlite.exec(`
@@ -110,7 +126,12 @@ export function initDb() {
   migrateIngredientBarcode();
   migratePantryTables();
   migrateLogStatus();
+  migrateArchiveColumns();
+  migrateBackupSettings();
   seedIngredientConversions();
+
+  const { ensureDailyBackupCheck } = require("@/lib/backup/trigger") as typeof import("@/lib/backup/trigger");
+  ensureDailyBackupCheck();
 }
 
 function migrateIngredientPantryFields() {
@@ -150,6 +171,53 @@ function migrateIngredientBarcode() {
     );
   } catch {
     /* index may already exist */
+  }
+}
+
+function migrateArchiveColumns() {
+  for (const table of ["ingredients", "recipes", "stores"] as const) {
+    const cols = sqlite.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === "archived_at")) {
+      try {
+        sqlite.exec(`ALTER TABLE ${table} ADD COLUMN archived_at TEXT`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes("duplicate column")) throw error;
+      }
+    }
+  }
+}
+
+function migrateBackupSettings() {
+  const cols = sqlite.prepare("PRAGMA table_info(app_settings)").all() as { name: string }[];
+  const add = (sql: string) => {
+    try {
+      sqlite.exec(sql);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  };
+  if (!cols.some((c) => c.name === "backup_enabled")) {
+    add("ALTER TABLE app_settings ADD COLUMN backup_enabled INTEGER NOT NULL DEFAULT 1");
+  }
+  if (!cols.some((c) => c.name === "backup_directory")) {
+    add("ALTER TABLE app_settings ADD COLUMN backup_directory TEXT");
+  }
+  if (!cols.some((c) => c.name === "backup_retention_count")) {
+    add("ALTER TABLE app_settings ADD COLUMN backup_retention_count INTEGER NOT NULL DEFAULT 14");
+  }
+  if (!cols.some((c) => c.name === "backup_frequency")) {
+    add("ALTER TABLE app_settings ADD COLUMN backup_frequency TEXT NOT NULL DEFAULT 'daily'");
+  }
+  if (!cols.some((c) => c.name === "last_backup_at")) {
+    add("ALTER TABLE app_settings ADD COLUMN last_backup_at TEXT");
+  }
+  if (!cols.some((c) => c.name === "last_backup_status")) {
+    add("ALTER TABLE app_settings ADD COLUMN last_backup_status TEXT");
+  }
+  if (!cols.some((c) => c.name === "last_backup_error")) {
+    add("ALTER TABLE app_settings ADD COLUMN last_backup_error TEXT");
   }
 }
 

@@ -22,6 +22,7 @@ function ing(partial: Partial<Ingredient> & { id: number; name: string }): Ingre
     gramsPerUnit: null,
     mlPerGram: null,
     barcode: null,
+    archivedAt: null,
     ...partial,
   };
 }

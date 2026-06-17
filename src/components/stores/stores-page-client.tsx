@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeft } from "lucide-react";
 import {
+  archiveStore,
   createStore,
   createStoreProduct,
   deleteStore,
   deleteStoreProduct,
 } from "@/app/actions";
+import { DeleteGuardDialog } from "@/components/integrity/delete-guard-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,11 @@ export function StoresPageClient({
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [guard, setGuard] = useState<{
+    storeId: number;
+    storeName: string;
+    items: { label: string; detail?: string }[];
+  } | null>(null);
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -55,7 +62,23 @@ export function StoresPageClient({
     refresh();
   }
 
-  async function handleDeleteStore(id: number) {
+  async function handleDeleteStore(id: number, name: string) {
+    const res = await fetch(`/api/integrity/store/${id}`);
+    if (!res.ok) {
+      await deleteStore(id);
+      refresh();
+      return;
+    }
+    const deps = await res.json();
+    if (deps.productCount > 0) {
+      setGuard({
+        storeId: id,
+        storeName: name,
+        items: [{ label: `${deps.productCount} store product link${deps.productCount === 1 ? "" : "s"}` }],
+      });
+      return;
+    }
+    if (!confirm(`Delete ${name}?`)) return;
     setDeletingId(id);
     try {
       await deleteStore(id);
@@ -195,7 +218,7 @@ export function StoresPageClient({
                 variant="ghost"
                 size="sm"
                 disabled={deletingId === store.id}
-                onClick={() => handleDeleteStore(store.id)}
+                onClick={() => handleDeleteStore(store.id, store.name)}
                 className="min-h-[44px] min-w-[44px]"
               >
                 {deletingId === store.id ? "…" : "Delete"}
@@ -238,6 +261,31 @@ export function StoresPageClient({
           ))
         )}
       </section>
+
+      <DeleteGuardDialog
+        open={guard != null}
+        title={guard ? `Delete ${guard.storeName}?` : ""}
+        subtitle="This store is linked to products. Deleting it would affect them."
+        items={guard?.items ?? []}
+        onArchive={async () => {
+          if (!guard) return;
+          setDeletingId(guard.storeId);
+          await archiveStore(guard.storeId);
+          setGuard(null);
+          setDeletingId(null);
+          refresh();
+        }}
+        onDeleteAnyway={async () => {
+          if (!guard) return;
+          setDeletingId(guard.storeId);
+          await deleteStore(guard.storeId);
+          setGuard(null);
+          setDeletingId(null);
+          refresh();
+        }}
+        onClose={() => setGuard(null)}
+        busy={deletingId != null}
+      />
     </div>
   );
 }

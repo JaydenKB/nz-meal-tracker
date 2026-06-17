@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
+import { notArchivedIngredient, notArchivedRecipe, notArchivedStore } from "@/lib/db/archived";
 import {
   batches,
   ingredients,
@@ -26,7 +27,11 @@ import { getPantryMap } from "@/lib/pantry/queries";
 import { getRecipeCost } from "@/lib/cost/recipe";
 
 export async function getAllRecipesWithSummary() {
-  const all = await db.select().from(recipes).orderBy(desc(recipes.createdAt));
+  const all = await db
+    .select()
+    .from(recipes)
+    .where(notArchivedRecipe)
+    .orderBy(desc(recipes.createdAt));
   return Promise.all(
     all.map(async (recipe) => {
       const details = await getRecipeWithDetails(recipe.id);
@@ -48,7 +53,12 @@ export async function getLatestBatch() {
 }
 
 export async function getRecentRecipesWithSummary(limit = 10) {
-  const recent = await db.select().from(recipes).orderBy(desc(recipes.createdAt)).limit(limit);
+  const recent = await db
+    .select()
+    .from(recipes)
+    .where(notArchivedRecipe)
+    .orderBy(desc(recipes.createdAt))
+    .limit(limit);
 
   return Promise.all(
     recent.map(async (recipe) => {
@@ -66,11 +76,20 @@ export async function getRecentRecipesWithSummary(limit = 10) {
 }
 
 export async function getRecentRecipes(limit = 10) {
-  return db.select().from(recipes).orderBy(desc(recipes.createdAt)).limit(limit);
+  return db
+    .select()
+    .from(recipes)
+    .where(notArchivedRecipe)
+    .orderBy(desc(recipes.createdAt))
+    .limit(limit);
 }
 
 export async function getAllIngredients() {
-  return db.select().from(ingredients).orderBy(ingredients.name);
+  return db
+    .select()
+    .from(ingredients)
+    .where(notArchivedIngredient)
+    .orderBy(ingredients.name);
 }
 
 export async function getIngredientDetail(ingredientId: number) {
@@ -108,7 +127,7 @@ export async function getIngredientDetail(ingredientId: number) {
 }
 
 export async function getAllStores() {
-  return db.select().from(stores).orderBy(stores.name);
+  return db.select().from(stores).where(notArchivedStore).orderBy(stores.name);
 }
 
 export async function getStoreProducts() {

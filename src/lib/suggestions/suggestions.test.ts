@@ -86,6 +86,7 @@ describe("generateRuleBasedSuggestions", () => {
             gramsPerUnit: null,
             mlPerGram: null,
             barcode: null,
+            archivedAt: null,
           },
         ],
         [
@@ -105,6 +106,7 @@ describe("generateRuleBasedSuggestions", () => {
             gramsPerUnit: null,
             mlPerGram: null,
             barcode: null,
+            archivedAt: null,
           },
         ],
         [
@@ -124,6 +126,7 @@ describe("generateRuleBasedSuggestions", () => {
             gramsPerUnit: null,
             mlPerGram: null,
             barcode: null,
+            archivedAt: null,
           },
         ],
       ]),
@@ -147,6 +150,7 @@ describe("generateRuleBasedSuggestions", () => {
           gramsPerUnit: null,
           mlPerGram: null,
           barcode: null,
+          archivedAt: null,
         },
       ],
     });
@@ -193,6 +197,7 @@ describe("simulateAndScore", () => {
           gramsPerUnit: null,
           mlPerGram: null,
           barcode: null,
+          archivedAt: null,
         },
       ],
     ]);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { aiErrorMessage, aiErrorStatus } from "@/lib/ai/errors";
+import { aiErrorJsonResponse, AI_FALLBACK_HINTS } from "@/lib/ai/handler";
 import { aiGenerateProse } from "@/lib/ai/provider";
 import {
   buildExplainStepPrompt,
@@ -49,9 +49,6 @@ export async function POST(
     const elaboration = await aiGenerateProse(settings, prompt);
     return NextResponse.json({ elaboration: elaboration.trim() });
   } catch (error) {
-    return NextResponse.json(
-      { error: aiErrorMessage(error) },
-      { status: aiErrorStatus(error) },
-    );
+    return aiErrorJsonResponse(error, AI_FALLBACK_HINTS.explain);
   }
 }

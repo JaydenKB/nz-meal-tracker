@@ -17,7 +17,7 @@ import {
 } from "@/lib/generation/goals";
 import { keywordsSummarySuffix, parseRecipeKeywords } from "@/lib/generation/keywords";
 import { filterVerifiedRecipes, verifyGeneratedRecipe } from "@/lib/generation/verify";
-import { aiErrorMessage, aiErrorStatus, AiProviderError } from "@/lib/ai/errors";
+import { aiErrorJsonResponse, AI_FALLBACK_HINTS } from "@/lib/ai/handler";
 import { effectiveAiProvider, providerDisplayName } from "@/lib/ai/settings";
 import { getAppSettings } from "@/lib/log/queries";
 
@@ -129,12 +129,6 @@ export async function POST(request: Request) {
       mode,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: aiErrorMessage(error),
-        retryable: error instanceof AiProviderError ? error.retryable : false,
-      },
-      { status: aiErrorStatus(error) },
-    );
+    return aiErrorJsonResponse(error, AI_FALLBACK_HINTS.generate);
   }
 }

@@ -7,6 +7,7 @@ import { enrichFromPublicDatabase } from "@/lib/nutrition/lookup";
 import { getAppSettings } from "@/lib/log/queries";
 import { aiScanSingleImage, aiVisionModelLabel } from "@/lib/ai/provider";
 import { effectiveAiProvider } from "@/lib/ai/settings";
+import { aiErrorJsonResponse, AI_FALLBACK_HINTS } from "@/lib/ai/handler";
 
 export const runtime = "nodejs";
 
@@ -86,7 +87,6 @@ export async function POST(request: Request) {
       provider: effectiveAiProvider(settings),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to scan screenshot";
-    return NextResponse.json({ error: message }, { status: 503 });
+    return aiErrorJsonResponse(error, AI_FALLBACK_HINTS.scan);
   }
 }

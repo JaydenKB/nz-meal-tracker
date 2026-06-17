@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ingredients } from "@/lib/db/schema";
 import { aiScanProductLabels, aiVisionModelLabel } from "@/lib/ai/provider";
-import { aiErrorMessage, aiErrorStatus } from "@/lib/ai/errors";
+import { aiErrorJsonResponse, AI_FALLBACK_HINTS } from "@/lib/ai/handler";
 import { effectiveAiProvider } from "@/lib/ai/settings";
 import { normalizeScannedItem, type DetectedItem } from "@/lib/import/types";
 import { enrichFromPublicDatabase } from "@/lib/nutrition/lookup";
@@ -62,7 +62,7 @@ export async function PUT(request: Request) {
       provider: effectiveAiProvider(settings),
     });
   } catch (error) {
-    return NextResponse.json({ error: aiErrorMessage(error) }, { status: aiErrorStatus(error) });
+    return aiErrorJsonResponse(error, AI_FALLBACK_HINTS.labelScan);
   }
 }
 

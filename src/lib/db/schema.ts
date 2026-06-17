@@ -20,6 +20,8 @@ export const ingredients = sqliteTable("ingredients", {
   mlPerGram: real("ml_per_gram"),
   /** EAN/UPC barcode when added via scan — enables instant re-lookup */
   barcode: text("barcode"),
+  /** Soft-delete: hidden from pickers but references remain intact */
+  archivedAt: text("archived_at"),
 });
 
 export const pantryItems = sqliteTable("pantry_items", {
@@ -58,6 +60,7 @@ export const stores = sqliteTable("stores", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   notes: text("notes"),
+  archivedAt: text("archived_at"),
 });
 
 export const storeProducts = sqliteTable("store_products", {
@@ -86,6 +89,7 @@ export const recipes = sqliteTable("recipes", {
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
+  archivedAt: text("archived_at"),
 });
 
 export const recipeIngredients = sqliteTable("recipe_ingredients", {
@@ -145,6 +149,13 @@ export const appSettings = sqliteTable("app_settings", {
   openaiVisionModel: text("openai_vision_model").notNull().default("gpt-4o"),
   anthropicApiKey: text("anthropic_api_key"),
   anthropicTextModel: text("anthropic_text_model").notNull().default("claude-sonnet-4-20250514"),
+  backupEnabled: integer("backup_enabled", { mode: "boolean" }).notNull().default(true),
+  backupDirectory: text("backup_directory"),
+  backupRetentionCount: integer("backup_retention_count").notNull().default(14),
+  backupFrequency: text("backup_frequency").notNull().default("daily"),
+  lastBackupAt: text("last_backup_at"),
+  lastBackupStatus: text("last_backup_status"),
+  lastBackupError: text("last_backup_error"),
 });
 
 export type AiProvider = "local" | "openai" | "anthropic";

@@ -81,6 +81,10 @@ export function SettingsPageClient() {
 
       <SettingsForm layout="grouped" />
 
+      <SettingsSection title="Data">
+        <SettingsRow label="Backups" href="/settings/backups" />
+      </SettingsSection>
+
       <SettingsSection title="Server">
         <div className="bg-white px-4 py-4">
           <ServerStatusBar />

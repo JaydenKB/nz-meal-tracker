@@ -88,6 +88,24 @@ export async function GET() {
     openaiConfigured: isOpenAIConfigured(settings),
     anthropicConfigured: isAnthropicConfigured(settings),
     imageGenAvailable: isOpenAIConfigured(settings),
+    summary:
+      provider === "local"
+        ? ollama.ok && ollama.textModelReady && ollama.visionModelReady
+          ? "Local AI ready"
+          : ollama.ok
+            ? "Ollama reachable — check models are pulled"
+            : "Ollama unreachable"
+        : provider === "openai"
+          ? openai.ok
+            ? "OpenAI connected"
+            : openai.configured
+              ? "OpenAI key invalid or unreachable"
+              : "OpenAI key not set"
+          : anthropic.ok
+            ? "Anthropic connected"
+            : anthropic.configured
+              ? "Anthropic key invalid or unreachable"
+              : "Anthropic key not set",
     ollama,
     openai,
     anthropic,
