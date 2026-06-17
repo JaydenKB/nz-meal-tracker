@@ -21,6 +21,10 @@ export type SimLine = {
   carbsG: number;
   defaultUnit: string;
   nutrientsJson: string | null;
+  canonicalUnit: string | null;
+  mlPerGram: number | null;
+  gramsPerUnit: number | null;
+  name: string;
 };
 
 export function simulateSuggestion(
@@ -42,6 +46,10 @@ export function simulateSuggestion(
     carbsG: ing.carbsG,
     defaultUnit: ing.defaultUnit,
     nutrientsJson: ing.nutrientsJson,
+    canonicalUnit: ing.canonicalUnit ?? null,
+    mlPerGram: ing.mlPerGram ?? null,
+    gramsPerUnit: ing.gramsPerUnit ?? null,
+    name: ing.name,
   });
 
   if (action === "swap" && s.ingredient_id && s.new_ingredient_id) {

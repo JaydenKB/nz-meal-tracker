@@ -129,3 +129,32 @@ export async function deleteRecipe(id: number) {
   revalidatePath("/");
   redirect("/");
 }
+
+export async function updateIngredientConversions(formData: FormData) {
+  const id = Number(formData.get("id"));
+  if (!id) return;
+
+  const canonicalUnit = String(formData.get("canonicalUnit") ?? "").trim() || null;
+  const densityRaw = String(formData.get("densityGPerMl") ?? "").trim();
+  const gramsEachRaw = String(formData.get("gramsPerEach") ?? "").trim();
+
+  const densityGPerMl = densityRaw ? Number(densityRaw) : null;
+  const gramsPerEach = gramsEachRaw ? Number(gramsEachRaw) : null;
+
+  await db
+    .update(ingredients)
+    .set({
+      canonicalUnit:
+        canonicalUnit === "g" || canonicalUnit === "ml" || canonicalUnit === "each"
+          ? canonicalUnit
+          : null,
+      mlPerGram:
+        densityGPerMl != null && densityGPerMl > 0 ? 1 / densityGPerMl : null,
+      gramsPerUnit: gramsPerEach != null && gramsPerEach > 0 ? gramsPerEach : null,
+    })
+    .where(eq(ingredients.id, id));
+
+  revalidatePath(`/ingredients/${id}`);
+  revalidatePath("/ingredients");
+  revalidatePath("/recipes");
+}

@@ -18,6 +18,7 @@ import {
   sumNutrients,
 } from "@/lib/nutrition/calculate";
 import { calculateHealthScore } from "@/lib/nutrition/healthScore";
+import { analyzeRecipeConversion } from "@/lib/nutrition/recipe-lines";
 import type { ExtendedNutrients } from "@/lib/nutrition/nutrients";
 import { buildShoppingListWithPantry } from "@/lib/shopping/buildList";
 import { buildShoppingCostSummary } from "@/lib/cost/estimate";
@@ -129,19 +130,28 @@ export async function getRecipeWithDetails(id: number) {
     .innerJoin(ingredients, eq(recipeIngredients.ingredientId, ingredients.id))
     .where(eq(recipeIngredients.recipeId, id));
 
-  const lineMacros = lines.map((line) =>
+  const mappedLines = lines.map((l) => ({
+    id: l.recipe_ingredients.id,
+    quantity: l.recipe_ingredients.quantity,
+    unit: l.recipe_ingredients.unit,
+    ingredient: l.ingredients,
+  }));
+
+  const conversion = analyzeRecipeConversion(mappedLines);
+
+  const lineMacros = mappedLines.map((line) =>
     calculateLineMacros({
-      quantity: line.recipe_ingredients.quantity,
-      unit: line.recipe_ingredients.unit,
-      ingredient: line.ingredients,
+      quantity: line.quantity,
+      unit: line.unit,
+      ingredient: line.ingredient,
     }),
   );
 
-  const lineNutrients = lines.map((line) =>
+  const lineNutrients = mappedLines.map((line) =>
     calculateLineNutrients({
-      quantity: line.recipe_ingredients.quantity,
-      unit: line.recipe_ingredients.unit,
-      ingredient: line.ingredients,
+      quantity: line.quantity,
+      unit: line.unit,
+      ingredient: line.ingredient,
     }),
   );
 
@@ -160,16 +170,13 @@ export async function getRecipeWithDetails(id: number) {
 
   return {
     recipe,
-    lines: lines.map((l) => ({
-      id: l.recipe_ingredients.id,
-      quantity: l.recipe_ingredients.quantity,
-      unit: l.recipe_ingredients.unit,
-      ingredient: l.ingredients,
-    })),
+    lines: mappedLines,
     total,
     perServing: perServingMacros,
     perServingNutrients: perServingExtended,
     healthScore,
+    macrosExact: conversion.exact,
+    conversion,
   };
 }
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { IngredientConversionsForm } from "@/components/ingredients/ingredient-conversions-form";
 import { MacroTiles } from "@/components/recipes/macro-grid";
 
 type ProductRow = {
@@ -29,6 +30,9 @@ export function IngredientDetailClient({
     fatG: number;
     carbsG: number;
     isProcessed: boolean;
+    canonicalUnit: string | null;
+    mlPerGram: number | null;
+    gramsPerUnit: number | null;
   };
   products: ProductRow[];
   pantry: { quantity: number; unit: string } | null;
@@ -53,11 +57,16 @@ export function IngredientDetailClient({
         </Link>
         <div>
           <h1 className="text-xl font-medium">{ingredient.name}</h1>
-          <p className="text-sm text-[var(--muted)]">per 100{ingredient.defaultUnit}</p>
+          <p className="text-sm text-[var(--muted)]">Conversions & units</p>
         </div>
       </header>
 
-      <MacroTiles perServing={per100g} />
+      <IngredientConversionsForm ingredient={ingredient} />
+
+      <section>
+        <h2 className="mb-2 text-base font-medium">Nutrition per 100{ingredient.defaultUnit}</h2>
+        <MacroTiles perServing={per100g} />
+      </section>
 
       <section className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--beige)] px-4 py-3">
         <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Pantry</p>

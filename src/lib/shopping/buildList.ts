@@ -6,7 +6,7 @@ import {
   fromCanonicalForDisplay,
   toCanonicalAmount,
 } from "@/lib/pantry/canonical";
-import { convertQuantity, formatQuantity, normalizeForNutrition } from "@/lib/nutrition/units";
+import { convertQuantity, formatQuantity, resolveNutritionAmount } from "@/lib/nutrition/units";
 
 export type RecipeLineForShopping = {
   quantity: number;
@@ -131,18 +131,20 @@ export function buildShoppingListCore(
       .filter((p) => p.ingredientId === line.ingredient.id)
       .sort((a, b) => Number(b.isPreferred) - Number(a.isPreferred));
 
-    const { amount, basis } = normalizeForNutrition(
-      scaledQty,
-      line.unit,
-      line.ingredient.defaultUnit,
-    );
+    const { amount, basis } = resolveNutritionAmount(scaledQty, line.unit, {
+      defaultUnit: line.ingredient.defaultUnit,
+      canonicalUnit: line.ingredient.canonicalUnit,
+      mlPerGram: line.ingredient.mlPerGram,
+      gramsPerUnit: line.ingredient.gramsPerUnit,
+      name: line.ingredient.name,
+    });
 
     const neededDisplay =
       basis === "perEach"
         ? formatQuantity(scaledQty, line.unit)
         : formatQuantity(
             amount,
-            line.ingredient.defaultUnit === "each" ? "g" : line.ingredient.defaultUnit,
+            basis === "per100ml" ? "ml" : line.ingredient.defaultUnit === "each" ? "g" : line.ingredient.defaultUnit,
           );
 
     if (ingredientProducts.length === 0) {

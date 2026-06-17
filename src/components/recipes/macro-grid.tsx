@@ -1,15 +1,26 @@
 import type { Macros } from "@/lib/nutrition/calculate";
 
-export function MacroTiles({ perServing }: { perServing: Macros }) {
+export function MacroTiles({
+  perServing,
+  estimated = false,
+}: {
+  perServing: Macros;
+  estimated?: boolean;
+}) {
+  const prefix = estimated ? "~" : "";
   const stats = [
-    { value: Math.round(perServing.calories), label: "kcal" },
-    { value: `${Math.round(perServing.proteinG)}g`, label: "protein" },
-    { value: `${Math.round(perServing.fatG)}g`, label: "fat" },
-    { value: `${Math.round(perServing.carbsG)}g`, label: "carbs" },
+    { value: `${prefix}${Math.round(perServing.calories)}`, label: "kcal" },
+    { value: `${prefix}${Math.round(perServing.proteinG)}g`, label: "protein" },
+    { value: `${prefix}${Math.round(perServing.fatG)}g`, label: "fat" },
+    { value: `${prefix}${Math.round(perServing.carbsG)}g`, label: "carbs" },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="space-y-2">
+      {estimated && (
+        <p className="text-right text-xs font-medium text-[var(--streak)]">~ estimated</p>
+      )}
+      <div className="grid grid-cols-4 gap-2">
       {stats.map((stat) => (
         <div
           key={stat.label}
@@ -21,6 +32,7 @@ export function MacroTiles({ perServing }: { perServing: Macros }) {
           <p className="mt-1.5 text-[10px] font-normal text-[var(--muted)]">{stat.label}</p>
         </div>
       ))}
+      </div>
     </div>
   );
 }

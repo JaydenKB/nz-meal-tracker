@@ -9,6 +9,7 @@ import { createBatch } from "@/app/actions";
 import { HealthScoreBadgeLink } from "@/components/recipes/health-score-badge";
 import { MacroTiles } from "@/components/recipes/macro-grid";
 import { MealPriceText } from "@/components/recipes/meal-price-text";
+import { RecipeConversionBanner } from "@/components/recipes/recipe-conversion-banner";
 import { Button } from "@/components/ui/button";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
 import { todayString } from "@/lib/log/compute";
@@ -20,7 +21,8 @@ type Line = {
   id: number;
   quantity: number;
   unit: string;
-  ingredient: { name: string };
+  ingredient: { id: number; name: string };
+  conversionExact?: boolean;
 };
 
 export function RecipeDetailClient({
@@ -31,6 +33,9 @@ export function RecipeDetailClient({
   instructions,
   perMealCost,
   costPartial,
+  macrosExact = true,
+  inexactCount = 0,
+  firstInexactIngredientId,
 }: {
   recipe: {
     id: number;
@@ -45,6 +50,9 @@ export function RecipeDetailClient({
   instructions: string | null;
   perMealCost: number | null;
   costPartial: boolean;
+  macrosExact?: boolean;
+  inexactCount?: number;
+  firstInexactIngredientId?: number;
 }) {
   const router = useRouter();
   const methodSteps = parseMethodSteps(instructions);
@@ -113,7 +121,13 @@ export function RecipeDetailClient({
           <HealthScoreBadgeLink recipeId={recipe.id} score={score} />
         </div>
 
-        <MacroTiles perServing={perServing} />
+        <RecipeConversionBanner
+          recipeId={recipe.id}
+          inexactCount={inexactCount}
+          firstIngredientId={firstInexactIngredientId}
+        />
+
+        <MacroTiles perServing={perServing} estimated={!macrosExact} />
 
         {perMealCost != null && (
           <MealPriceText
@@ -165,9 +179,21 @@ export function RecipeDetailClient({
             {lines.map((line) => (
               <div
                 key={line.id}
-                className="flex justify-between px-4 py-3.5 text-sm text-[var(--foreground)]"
+                className={`flex justify-between px-4 py-3.5 text-sm text-[var(--foreground)] ${
+                  line.conversionExact === false
+                    ? "bg-[var(--orange-soft)]/50"
+                    : ""
+                }`}
               >
-                <span>{line.ingredient.name}</span>
+                <span className="flex items-center gap-2">
+                  {line.conversionExact === false && (
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-sm bg-[var(--streak)]"
+                      aria-hidden
+                    />
+                  )}
+                  {line.ingredient.name}
+                </span>
                 <span className="font-normal text-[var(--muted)]">
                   {line.quantity} {line.unit}
                 </span>

@@ -13,8 +13,10 @@ export default async function RecipeDetailPage({
 
   if (!details) notFound();
 
-  const { recipe, lines, perServing, healthScore } = details;
+  const { recipe, lines, perServing, healthScore, macrosExact, conversion } = details;
   const cost = await getRecipeCost(recipe.id);
+
+  const issueIds = new Set(conversion.issues.map((i) => i.lineId));
 
   return (
     <RecipeDetailClient
@@ -25,12 +27,21 @@ export default async function RecipeDetailPage({
         prepMinutes: null,
         imageUrl: recipe.imageUrl,
       }}
-      lines={lines}
+      lines={lines.map((l) => ({
+        id: l.id,
+        quantity: l.quantity,
+        unit: l.unit,
+        ingredient: { id: l.ingredient.id, name: l.ingredient.name },
+        conversionExact: !issueIds.has(l.id),
+      }))}
       perServing={perServing}
       score={healthScore.score}
       instructions={recipe.instructions}
       perMealCost={cost.perMealCost}
       costPartial={cost.isPartial}
+      macrosExact={macrosExact}
+      inexactCount={conversion.inexactCount}
+      firstInexactIngredientId={conversion.inexactIngredientIds[0]}
     />
   );
 }

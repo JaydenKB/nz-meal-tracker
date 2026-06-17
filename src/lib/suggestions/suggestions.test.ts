@@ -5,6 +5,21 @@ import type { SimLine } from "@/lib/suggestions/simulate";
 import { inferSuggestionAction } from "@/lib/suggestions/infer";
 import { simulateAndScore } from "@/lib/suggestions/score";
 
+function simLine(partial: Omit<import("@/lib/suggestions/simulate").SimLine, "canonicalUnit" | "mlPerGram" | "gramsPerUnit" | "name"> & {
+  name?: string;
+  canonicalUnit?: string | null;
+  mlPerGram?: number | null;
+  gramsPerUnit?: number | null;
+}): import("@/lib/suggestions/simulate").SimLine {
+  return {
+    canonicalUnit: null,
+    mlPerGram: null,
+    gramsPerUnit: null,
+    name: "test",
+    ...partial,
+  };
+}
+
 describe("inferSuggestionAction", () => {
   it("detects swap and reduce from text", () => {
     expect(inferSuggestionAction("Swap white rice for brown rice")).toBe("swap");
@@ -22,7 +37,7 @@ describe("generateRuleBasedSuggestions", () => {
     );
 
     const baseLines: SimLine[] = [
-      {
+      simLine({
         ingredientId: 1,
         quantity: 400,
         unit: "g",
@@ -33,8 +48,8 @@ describe("generateRuleBasedSuggestions", () => {
         carbsG: 12,
         defaultUnit: "g",
         nutrientsJson: JSON.stringify({ sodiumMg: 275, sugarG: 3.5, saturatedFatG: 2 }),
-      },
-      {
+      }),
+      simLine({
         ingredientId: 2,
         quantity: 150,
         unit: "g",
@@ -45,7 +60,7 @@ describe("generateRuleBasedSuggestions", () => {
         carbsG: 0,
         defaultUnit: "g",
         nutrientsJson: JSON.stringify({ sodiumMg: 74 }),
-      },
+      }),
     ];
 
     const suggestions = generateRuleBasedSuggestions({
@@ -142,7 +157,7 @@ describe("generateRuleBasedSuggestions", () => {
 describe("simulateAndScore", () => {
   it("scores sodium reduction higher than before", () => {
     const baseLines: SimLine[] = [
-      {
+      simLine({
         ingredientId: 1,
         quantity: 30,
         unit: "ml",
@@ -153,7 +168,7 @@ describe("simulateAndScore", () => {
         carbsG: 10,
         defaultUnit: "ml",
         nutrientsJson: JSON.stringify({ sodiumMg: 6000 }),
-      },
+      }),
     ];
 
     const ingredientMap = new Map([

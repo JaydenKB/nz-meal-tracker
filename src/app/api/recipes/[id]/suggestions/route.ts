@@ -40,6 +40,10 @@ async function loadSimLines(recipeId: number): Promise<SimLine[] | null> {
     carbsG: l.ingredient.carbsG,
     defaultUnit: l.ingredient.defaultUnit,
     nutrientsJson: l.ingredient.nutrientsJson,
+    canonicalUnit: l.ingredient.canonicalUnit ?? null,
+    mlPerGram: l.ingredient.mlPerGram ?? null,
+    gramsPerUnit: l.ingredient.gramsPerUnit ?? null,
+    name: l.ingredient.name,
   }));
 }
 

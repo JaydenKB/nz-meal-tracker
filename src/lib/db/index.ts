@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import path from "path";
+import { CONVERSION_REFERENCE } from "@/lib/nutrition/conversion-reference";
 import * as schema from "./schema";
 
 const dbPath = process.env.DATABASE_URL?.replace("file:", "") ?? path.join(process.cwd(), "local.db");
@@ -108,6 +109,7 @@ export function initDb() {
   migrateIngredientPantryFields();
   migratePantryTables();
   migrateLogStatus();
+  seedIngredientConversions();
 }
 
 function migrateIngredientPantryFields() {
@@ -163,6 +165,53 @@ function migratePantryTables() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+}
+
+function seedIngredientConversions() {
+  const rows = sqlite
+    .prepare(
+      "SELECT id, name, canonical_unit, grams_per_unit, ml_per_gram FROM ingredients",
+    )
+    .all() as {
+    id: number;
+    name: string;
+    canonical_unit: string | null;
+    grams_per_unit: number | null;
+    ml_per_gram: number | null;
+  }[];
+
+  const update = sqlite.prepare(`
+    UPDATE ingredients
+    SET canonical_unit = COALESCE(canonical_unit, @canonicalUnit),
+        grams_per_unit = COALESCE(grams_per_unit, @gramsPerUnit),
+        ml_per_gram = COALESCE(ml_per_gram, @mlPerGram)
+    WHERE id = @id
+  `);
+
+  for (const row of rows) {
+    const lower = row.name.toLowerCase();
+    let ref: (typeof CONVERSION_REFERENCE)[number] | null = null;
+    let bestLen = 0;
+    for (const candidate of CONVERSION_REFERENCE) {
+      if (lower.includes(candidate.match) && candidate.match.length > bestLen) {
+        ref = candidate;
+        bestLen = candidate.match.length;
+      }
+    }
+    if (!ref) continue;
+
+    const needsCanonical = !row.canonical_unit && ref.canonicalUnit;
+    const needsGrams = row.grams_per_unit == null && ref.gramsPerEach != null;
+    const needsDensity = row.ml_per_gram == null && ref.densityGPerMl != null;
+    if (!needsCanonical && !needsGrams && !needsDensity) continue;
+
+    update.run({
+      id: row.id,
+      canonicalUnit: ref.canonicalUnit ?? null,
+      gramsPerUnit: ref.gramsPerEach ?? null,
+      mlPerGram: ref.densityGPerMl != null ? 1 / ref.densityGPerMl : null,
+    });
+  }
 }
 
 function migrateAppSettingsTextModel() {
