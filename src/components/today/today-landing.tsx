@@ -8,6 +8,7 @@ import { ProgressStrip } from "@/components/today/progress-strip";
 import { QuickLogButton } from "@/components/today/quick-log-button";
 import { Button } from "@/components/ui/button";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
+import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { SectionHeader } from "@/components/ui/section-header";
 
 type FrequentRecipe = {
@@ -15,6 +16,8 @@ type FrequentRecipe = {
   name: string;
   kcal: number;
   proteinG: number;
+  perMealCost: number | null;
+  costPartial: boolean;
   accentIndex: number;
 };
 
@@ -93,6 +96,17 @@ export function TodayLandingClient({
                   </p>
                   <p className="text-sm font-normal text-[var(--muted)]">
                     {recipe.kcal} kcal · {recipe.proteinG}g protein
+                    {recipe.perMealCost != null && (
+                      <>
+                        {" · "}
+                        <MealPriceText
+                          perMealCost={recipe.perMealCost}
+                          isPartial={recipe.costPartial}
+                          variant="short"
+                          className="text-[var(--muted)]"
+                        />
+                      </>
+                    )}
                   </p>
                 </Link>
                 <QuickLogButton recipeId={recipe.id} onLogged={load} />

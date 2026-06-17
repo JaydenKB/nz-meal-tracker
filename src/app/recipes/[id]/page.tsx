@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { RecipeDetailClient } from "@/components/recipes/recipe-detail-client";
+import { getRecipeCost } from "@/lib/cost/recipe";
 import { getRecipeWithDetails } from "@/lib/queries";
 
 export default async function RecipeDetailPage({
@@ -13,6 +14,7 @@ export default async function RecipeDetailPage({
   if (!details) notFound();
 
   const { recipe, lines, perServing, healthScore } = details;
+  const cost = await getRecipeCost(recipe.id);
 
   return (
     <RecipeDetailClient
@@ -27,6 +29,8 @@ export default async function RecipeDetailPage({
       perServing={perServing}
       score={healthScore.score}
       instructions={recipe.instructions}
+      perMealCost={cost.perMealCost}
+      costPartial={cost.isPartial}
     />
   );
 }

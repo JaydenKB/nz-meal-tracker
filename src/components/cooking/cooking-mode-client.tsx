@@ -249,6 +249,7 @@ export function CookingModeClient({
           mealType: mealTypeFromTime(),
           servings: 1,
           recipeId,
+          deductPantry: true,
         }),
       });
       playLogSound();

@@ -104,6 +104,51 @@ export function initDb() {
   migrateAppSettingsOpenAI();
   migrateAppSettingsAnthropic();
   migrateIngredientNutrients();
+  migrateIngredientPantryFields();
+  migratePantryTables();
+}
+
+function migrateIngredientPantryFields() {
+  const cols = sqlite.prepare("PRAGMA table_info(ingredients)").all() as { name: string }[];
+  const add = (sql: string) => {
+    try {
+      sqlite.exec(sql);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  };
+  if (!cols.some((c) => c.name === "canonical_unit")) {
+    add("ALTER TABLE ingredients ADD COLUMN canonical_unit TEXT");
+  }
+  if (!cols.some((c) => c.name === "grams_per_unit")) {
+    add("ALTER TABLE ingredients ADD COLUMN grams_per_unit REAL");
+  }
+  if (!cols.some((c) => c.name === "ml_per_gram")) {
+    add("ALTER TABLE ingredients ADD COLUMN ml_per_gram REAL");
+  }
+}
+
+function migratePantryTables() {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS pantry_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ingredient_id INTEGER NOT NULL UNIQUE REFERENCES ingredients(id) ON DELETE CASCADE,
+      quantity REAL NOT NULL DEFAULT 0,
+      unit TEXT NOT NULL DEFAULT 'g',
+      is_staple INTEGER NOT NULL DEFAULT 0,
+      low_threshold REAL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS pantry_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ingredient_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+      delta REAL NOT NULL,
+      reason TEXT NOT NULL,
+      ref_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
 }
 
 function migrateAppSettingsTextModel() {

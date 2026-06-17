@@ -7,6 +7,7 @@ import {
   getDailyGoals,
   getLogEntriesForDate,
 } from "@/lib/log/queries";
+import { deductRecipeFromPantry } from "@/lib/pantry/deduct";
 
 export const runtime = "nodejs";
 
@@ -62,5 +63,14 @@ export async function POST(request: Request) {
     ingredientId,
   });
 
-  return NextResponse.json({ entry }, { status: 201 });
+  let pantryDeduction;
+  if (body.deductPantry === true && recipeId) {
+    pantryDeduction = await deductRecipeFromPantry(
+      recipeId,
+      Math.max(0.1, Number(body.servings ?? 1)),
+      entry.id,
+    );
+  }
+
+  return NextResponse.json({ entry, pantryDeduction }, { status: 201 });
 }

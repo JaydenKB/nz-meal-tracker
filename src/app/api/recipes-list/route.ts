@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
-import { getRecentRecipes } from "@/lib/queries";
+import { getRecentRecipesWithSummary } from "@/lib/queries";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const recipes = await getRecentRecipes(100);
+  const recipes = await getRecentRecipesWithSummary(100);
   return NextResponse.json({
-    recipes: recipes.map((r) => ({ id: r.id, name: r.name, type: "recipe" as const })),
+    recipes: recipes.map((r) => ({
+      id: r.recipe.id,
+      name: r.recipe.name,
+      type: "recipe" as const,
+      kcal: Math.round(r.kcal),
+      perMealCost: r.perMealCost,
+      costPartial: r.costPartial,
+    })),
   });
 }

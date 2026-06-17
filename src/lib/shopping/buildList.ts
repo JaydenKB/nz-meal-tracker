@@ -1,4 +1,11 @@
 import type { Ingredient, Store, StoreProduct } from "@/lib/db/schema";
+import type { PantryRow } from "@/lib/pantry/queries";
+import {
+  conversionFailureMessage,
+  formatCanonicalAmount,
+  fromCanonicalForDisplay,
+  toCanonicalAmount,
+} from "@/lib/pantry/canonical";
 import { convertQuantity, formatQuantity, normalizeForNutrition } from "@/lib/nutrition/units";
 
 export type RecipeLineForShopping = {
@@ -22,16 +29,103 @@ export type ShoppingListGroup = {
   items: ShoppingListItem[];
 };
 
+export type OwnedListItem = {
+  ingredientId: number;
+  ingredientName: string;
+  pantryDisplay: string;
+  neededDisplay: string;
+};
+
+export type PantryAwareShoppingList = {
+  groups: ShoppingListGroup[];
+  owned: OwnedListItem[];
+  skippedCount: number;
+  cantAutoDeduct: { ingredientId: number; ingredientName: string; reason: string }[];
+};
+
+export function buildShoppingListWithPantry(
+  lines: RecipeLineForShopping[],
+  products: (StoreProduct & { store: Store; ingredient: Ingredient })[],
+  multiplier: number,
+  pantryMap: Map<number, PantryRow>,
+): PantryAwareShoppingList {
+  const owned: OwnedListItem[] = [];
+  const cantAutoDeduct: PantryAwareShoppingList["cantAutoDeduct"] = [];
+  const adjustedLines: RecipeLineForShopping[] = [];
+
+  for (const line of lines) {
+    const scaledQty = line.quantity * multiplier;
+    const required = toCanonicalAmount(scaledQty, line.unit, line.ingredient);
+
+    if (!required.ok) {
+      cantAutoDeduct.push({
+        ingredientId: line.ingredient.id,
+        ingredientName: line.ingredient.name,
+        reason: conversionFailureMessage(required.reason),
+      });
+      adjustedLines.push({ ...line, quantity: scaledQty });
+      continue;
+    }
+
+    const pantry = pantryMap.get(line.ingredient.id);
+    const onHand = pantry?.quantity ?? 0;
+    const neededCanonical = Math.max(0, required.amount - onHand);
+
+    const neededDisplay = formatCanonicalAmount(required.amount, required.unit);
+    const pantryDisplay = pantry
+      ? formatCanonicalAmount(pantry.quantity, pantry.unit as "g" | "ml" | "each")
+      : "0";
+
+    if (neededCanonical <= 0) {
+      owned.push({
+        ingredientId: line.ingredient.id,
+        ingredientName: line.ingredient.name,
+        pantryDisplay,
+        neededDisplay,
+      });
+      continue;
+    }
+
+    const display = fromCanonicalForDisplay(neededCanonical, line.ingredient);
+    adjustedLines.push({
+      quantity: display.quantity,
+      unit: display.unit,
+      ingredient: line.ingredient,
+    });
+  }
+
+  const groups = buildShoppingListCore(adjustedLines, products);
+
+  return {
+    groups,
+    owned,
+    skippedCount: owned.length,
+    cantAutoDeduct,
+  };
+}
+
+/** Original list builder — no pantry subtraction. */
 export function buildShoppingList(
   lines: RecipeLineForShopping[],
   products: (StoreProduct & { store: Store; ingredient: Ingredient })[],
   multiplier: number,
 ): ShoppingListGroup[] {
+  const scaled = lines.map((l) => ({
+    ...l,
+    quantity: l.quantity * multiplier,
+  }));
+  return buildShoppingListCore(scaled, products);
+}
+
+function buildShoppingListCore(
+  lines: RecipeLineForShopping[],
+  products: (StoreProduct & { store: Store; ingredient: Ingredient })[],
+): ShoppingListGroup[] {
   const byStore = new Map<number | "unlinked", ShoppingListGroup>();
   const unlinkedKey = "unlinked" as const;
 
   for (const line of lines) {
-    const scaledQty = line.quantity * multiplier;
+    const scaledQty = line.quantity;
     const ingredientProducts = products
       .filter((p) => p.ingredientId === line.ingredient.id)
       .sort((a, b) => Number(b.isPreferred) - Number(a.isPreferred));
@@ -45,13 +139,13 @@ export function buildShoppingList(
     const neededDisplay =
       basis === "perEach"
         ? formatQuantity(scaledQty, line.unit)
-        : formatQuantity(amount, line.ingredient.defaultUnit === "each" ? "g" : line.ingredient.defaultUnit);
+        : formatQuantity(
+            amount,
+            line.ingredient.defaultUnit === "each" ? "g" : line.ingredient.defaultUnit,
+          );
 
     if (ingredientProducts.length === 0) {
-      const group = byStore.get(unlinkedKey) ?? {
-        store: null,
-        items: [],
-      };
+      const group = byStore.get(unlinkedKey) ?? { store: null, items: [] };
       group.items.push({
         ingredientId: line.ingredient.id,
         ingredientName: line.ingredient.name,

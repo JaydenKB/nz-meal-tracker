@@ -8,6 +8,7 @@ import { TabHeader } from "@/components/layout/tab-header";
 import { AiTag, HealthScoreBadge } from "@/components/recipes/health-score-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { getRecipeAccent } from "@/lib/theme";
 
 function RecipeCardImage({
@@ -53,6 +54,8 @@ type RecipeItem = {
   kcal: number;
   proteinG: number;
   score: number;
+  perMealCost: number | null;
+  costPartial: boolean;
 };
 
 export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
@@ -120,6 +123,17 @@ export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
                   <p className="text-sm text-[var(--muted)]">
                     {Math.round(featured.kcal)} kcal · {Math.round(featured.proteinG)}g protein ·{" "}
                     {featured.recipe.servings} servings
+                    {featured.perMealCost != null && (
+                      <>
+                        {" · "}
+                        <MealPriceText
+                          perMealCost={featured.perMealCost}
+                          isPartial={featured.costPartial}
+                          variant="short"
+                          className="text-[var(--muted)]"
+                        />
+                      </>
+                    )}
                   </p>
                 </div>
               </article>
@@ -128,7 +142,7 @@ export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
 
           {rest.length > 0 && (
             <div className="grid grid-cols-2 gap-2.5">
-              {rest.map(({ recipe, kcal, proteinG, score }, i) => (
+              {rest.map(({ recipe, kcal, proteinG, score, perMealCost, costPartial }, i) => (
                 <Link key={recipe.id} href={`/recipes/${recipe.id}`}>
                   <article className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] bg-white">
                     <div className="relative aspect-square overflow-hidden bg-[var(--mint-hero)]">
@@ -147,6 +161,17 @@ export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
                       <h3 className="truncate text-sm font-medium">{recipe.name}</h3>
                       <p className="text-xs text-[var(--muted)]">
                         {Math.round(kcal)} kcal · {Math.round(proteinG)}g
+                        {perMealCost != null && (
+                          <>
+                            {" · "}
+                            <MealPriceText
+                              perMealCost={perMealCost}
+                              isPartial={costPartial}
+                              variant="short"
+                              className="text-[var(--muted)]"
+                            />
+                          </>
+                        )}
                       </p>
                     </div>
                   </article>

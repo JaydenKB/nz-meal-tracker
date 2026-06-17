@@ -8,6 +8,7 @@ import Image from "next/image";
 import { createBatch } from "@/app/actions";
 import { HealthScoreBadge } from "@/components/recipes/health-score-badge";
 import { MacroTiles } from "@/components/recipes/macro-grid";
+import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { Button } from "@/components/ui/button";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
 import { todayString } from "@/lib/log/compute";
@@ -28,6 +29,8 @@ export function RecipeDetailClient({
   perServing,
   score,
   instructions,
+  perMealCost,
+  costPartial,
 }: {
   recipe: {
     id: number;
@@ -40,6 +43,8 @@ export function RecipeDetailClient({
   perServing: Macros;
   score: number;
   instructions: string | null;
+  perMealCost: number | null;
+  costPartial: boolean;
 }) {
   const router = useRouter();
   const methodSteps = parseMethodSteps(instructions);
@@ -106,6 +111,14 @@ export function RecipeDetailClient({
         </div>
 
         <MacroTiles perServing={perServing} />
+
+        {perMealCost != null && (
+          <MealPriceText
+            perMealCost={perMealCost}
+            isPartial={costPartial}
+            variant="prominent"
+          />
+        )}
 
         {methodSteps.length > 0 && (
           <Link href={`/recipes/${recipe.id}/cook`} className="block">

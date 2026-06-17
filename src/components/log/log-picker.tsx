@@ -7,6 +7,7 @@ import { Minus, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
+import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
 import { MEAL_LABELS, MEAL_ORDER, todayString } from "@/lib/log/compute";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
@@ -17,6 +18,8 @@ type PickerItem = {
   id: number;
   name: string;
   kcal?: number;
+  perMealCost?: number | null;
+  costPartial?: boolean;
   accentIndex?: number;
 };
 
@@ -153,7 +156,20 @@ export function LogPickerClient() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-[var(--foreground)]">{item.name}</p>
                 {item.kcal != null && (
-                  <p className="text-sm text-[var(--muted)]">{item.kcal} kcal / serving</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    {item.kcal} kcal / serving
+                    {item.perMealCost != null && (
+                      <>
+                        {" · "}
+                        <MealPriceText
+                          perMealCost={item.perMealCost}
+                          isPartial={item.costPartial}
+                          variant="short"
+                          className="text-[var(--muted)]"
+                        />
+                      </>
+                    )}
+                  </p>
                 )}
               </div>
               <button

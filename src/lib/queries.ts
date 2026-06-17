@@ -19,19 +19,24 @@ import {
 } from "@/lib/nutrition/calculate";
 import { calculateHealthScore } from "@/lib/nutrition/healthScore";
 import type { ExtendedNutrients } from "@/lib/nutrition/nutrients";
-import { buildShoppingList } from "@/lib/shopping/buildList";
+import { buildShoppingListWithPantry } from "@/lib/shopping/buildList";
 import { buildShoppingCostSummary } from "@/lib/cost/estimate";
+import { getPantryMap } from "@/lib/pantry/queries";
+import { getRecipeCost } from "@/lib/cost/recipe";
 
 export async function getAllRecipesWithSummary() {
   const all = await db.select().from(recipes).orderBy(desc(recipes.createdAt));
   return Promise.all(
     all.map(async (recipe) => {
       const details = await getRecipeWithDetails(recipe.id);
+      const cost = await getRecipeCost(recipe.id);
       return {
         recipe,
         kcal: details?.perServing.calories ?? 0,
         proteinG: details?.perServing.proteinG ?? 0,
         score: details?.healthScore.score ?? 0,
+        perMealCost: cost.perMealCost,
+        costPartial: cost.isPartial,
       };
     }),
   );
@@ -47,10 +52,13 @@ export async function getRecentRecipesWithSummary(limit = 10) {
   return Promise.all(
     recent.map(async (recipe) => {
       const details = await getRecipeWithDetails(recipe.id);
+      const cost = await getRecipeCost(recipe.id);
       return {
         recipe,
         kcal: details?.perServing.calories ?? 0,
         score: details?.healthScore.score ?? 0,
+        perMealCost: cost.perMealCost,
+        costPartial: cost.isPartial,
       };
     }),
   );
@@ -150,7 +158,9 @@ export async function getBatchWithShoppingList(id: number) {
     ingredient: p.ingredients,
   }));
 
-  const shoppingList = buildShoppingList(
+  const pantryMap = await getPantryMap();
+
+  const pantryList = buildShoppingListWithPantry(
     details.lines.map((l) => ({
       quantity: l.quantity,
       unit: l.unit,
@@ -158,7 +168,10 @@ export async function getBatchWithShoppingList(id: number) {
     })),
     productRows,
     batch.multiplier,
+    pantryMap,
   );
+
+  const shoppingList = pantryList.groups;
 
   let estimatedTotal = 0;
   let hasPrices = false;
@@ -193,6 +206,9 @@ export async function getBatchWithShoppingList(id: number) {
     batch,
     recipe: details.recipe,
     shoppingList,
+    pantryOwned: pantryList.owned,
+    pantrySkippedCount: pantryList.skippedCount,
+    pantryCantAutoDeduct: pantryList.cantAutoDeduct,
     estimatedTotal: hasPrices ? Math.round(estimatedTotal * 100) / 100 : null,
     costSummary,
   };

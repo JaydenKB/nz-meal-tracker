@@ -12,6 +12,44 @@ export const ingredients = sqliteTable("ingredients", {
   isProcessed: integer("is_processed", { mode: "boolean" }).notNull().default(false),
   nutrientsJson: text("nutrients_json"),
   nutritionSource: text("nutrition_source"),
+  /** Pantry stock is tracked in this unit: g, ml, or each */
+  canonicalUnit: text("canonical_unit"),
+  /** Grams per countable item when canonical_unit is each */
+  gramsPerUnit: real("grams_per_unit"),
+  /** Density (ml per gram) for volume ↔ mass when needed */
+  mlPerGram: real("ml_per_gram"),
+});
+
+export const pantryItems = sqliteTable("pantry_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ingredientId: integer("ingredient_id")
+    .notNull()
+    .unique()
+    .references(() => ingredients.id, { onDelete: "cascade" }),
+  quantity: real("quantity").notNull().default(0),
+  /** Always matches ingredient canonical unit */
+  unit: text("unit").notNull().default("g"),
+  isStaple: integer("is_staple", { mode: "boolean" }).notNull().default(false),
+  lowThreshold: real("low_threshold"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+export const PANTRY_TRANSACTION_REASONS = ["bought", "cooked", "manual_adjust"] as const;
+export type PantryTransactionReason = (typeof PANTRY_TRANSACTION_REASONS)[number];
+
+export const pantryTransactions = sqliteTable("pantry_transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  ingredientId: integer("ingredient_id")
+    .notNull()
+    .references(() => ingredients.id, { onDelete: "cascade" }),
+  delta: real("delta").notNull(),
+  reason: text("reason").notNull(),
+  refId: integer("ref_id"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
 });
 
 export const stores = sqliteTable("stores", {
@@ -108,10 +146,21 @@ export const appSettings = sqliteTable("app_settings", {
 export type AiProvider = "local" | "openai" | "anthropic";
 export const AI_PROVIDERS: AiProvider[] = ["local", "openai", "anthropic"];
 
-export const ingredientsRelations = relations(ingredients, ({ many }) => ({
+export const ingredientsRelations = relations(ingredients, ({ many, one }) => ({
   recipeIngredients: many(recipeIngredients),
   storeProducts: many(storeProducts),
   logEntries: many(dailyLogEntries),
+  pantryItem: one(pantryItems, {
+    fields: [ingredients.id],
+    references: [pantryItems.ingredientId],
+  }),
+}));
+
+export const pantryItemsRelations = relations(pantryItems, ({ one }) => ({
+  ingredient: one(ingredients, {
+    fields: [pantryItems.ingredientId],
+    references: [ingredients.id],
+  }),
 }));
 
 export const storesRelations = relations(stores, ({ many }) => ({
@@ -157,6 +206,8 @@ export type RecipeOrigin = "manual" | "ai";
 export const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
 export type Ingredient = typeof ingredients.$inferSelect;
+export type PantryItem = typeof pantryItems.$inferSelect;
+export type PantryTransaction = typeof pantryTransactions.$inferSelect;
 export type Store = typeof stores.$inferSelect;
 export type StoreProduct = typeof storeProducts.$inferSelect;
 export type Recipe = typeof recipes.$inferSelect;

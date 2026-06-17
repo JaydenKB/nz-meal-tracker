@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { dailyLogEntries, recipes } from "@/lib/db/schema";
 import { shiftDate, todayString } from "@/lib/log/compute";
 import { getRecipeWithDetails } from "@/lib/queries";
+import { getRecipeCost } from "@/lib/cost/recipe";
 
 export type ProgressStats = {
   streakDays: number;
@@ -72,11 +73,14 @@ export async function getFrequentRecipes(limit = 4) {
     if (!row.recipeId) continue;
     const details = await getRecipeWithDetails(row.recipeId);
     if (!details) continue;
+    const cost = await getRecipeCost(row.recipeId);
     results.push({
       id: details.recipe.id,
       name: details.recipe.name,
       kcal: Math.round(details.perServing.calories),
       proteinG: Math.round(details.perServing.proteinG),
+      perMealCost: cost.perMealCost,
+      costPartial: cost.isPartial,
       accentIndex: details.recipe.id % 5,
     });
   }

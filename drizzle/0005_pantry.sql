@@ -1,0 +1,2 @@
+-- Pantry / inventory (applied via initDb migratePantryTables)
+-- pantry_items, pantry_transactions, ingredients.canonical_unit, grams_per_unit, ml_per_gram
