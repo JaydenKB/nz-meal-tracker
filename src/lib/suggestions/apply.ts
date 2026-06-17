@@ -2,12 +2,13 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { ingredients, recipeIngredients } from "@/lib/db/schema";
 import type { SuggestionAction } from "@/lib/suggestions/ollama";
+import { resolveSuggestionAction } from "@/lib/suggestions/infer";
 
 export async function applySuggestionToRecipe(
   recipeId: number,
   suggestion: SuggestionAction,
 ): Promise<void> {
-  const action = suggestion.action ?? inferAction(suggestion.change);
+  const action = resolveSuggestionAction(suggestion);
 
   if (action === "swap" && suggestion.ingredient_id && suggestion.new_ingredient_id) {
     const line = await db
@@ -75,12 +76,4 @@ export async function applySuggestionToRecipe(
         .where(eq(recipeIngredients.id, line.id));
     }
   }
-}
-
-function inferAction(change: string): SuggestionAction["action"] {
-  const lower = change.toLowerCase();
-  if (lower.includes("swap") || lower.includes("→") || lower.includes("->")) return "swap";
-  if (lower.includes("add")) return "add";
-  if (lower.includes("remove")) return "remove";
-  return "adjust";
 }

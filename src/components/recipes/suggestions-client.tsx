@@ -116,6 +116,20 @@ export function SuggestionsClient({
 
       {!loading && !error && (
         <>
+          {suggestions.length === 0 && (
+            <p className="rounded-[var(--radius-lg)] bg-[var(--beige)] px-4 py-6 text-center text-sm text-[var(--muted)]">
+              No verified improvements found for this recipe right now — it may already score well on
+              the available ingredients.
+            </p>
+          )}
+
+          {suggestions.length > 0 && (
+            <p className="text-xs text-[var(--muted)]">
+              Each suggestion is simulated against your health score — only changes that gain at least
+              +1 point are shown.
+            </p>
+          )}
+
           <div className="space-y-3">
             {suggestions.map((s, i) => {
               const delta = s.computed_delta ?? s.score_delta;
@@ -166,14 +180,16 @@ export function SuggestionsClient({
           {suggestions.length > 0 && (
             <div className="flex items-center justify-between rounded-[var(--radius-lg)] bg-[var(--green-soft)] px-4 py-4">
               <div>
-                <p className="text-sm font-medium text-[var(--muted)]">Projected score</p>
+                <p className="text-sm font-medium text-[var(--muted)]">Best single change</p>
                 <p className="text-2xl font-bold text-[var(--primary)]">
                   {currentScore} → {projectedScore}
                 </p>
               </div>
-              <Button disabled={applying} onClick={() => apply()}>
-                Apply all
-              </Button>
+              {suggestions.length > 1 && (
+                <Button disabled={applying} onClick={() => apply()}>
+                  Apply all
+                </Button>
+              )}
             </div>
           )}
 

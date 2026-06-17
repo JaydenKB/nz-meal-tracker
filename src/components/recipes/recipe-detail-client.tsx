@@ -6,7 +6,7 @@ import { AiPhotoPill } from "@/components/recipes/ai-photo-pill";
 import { ArrowLeft, ChefHat, ImageIcon, Plus, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { createBatch } from "@/app/actions";
-import { HealthScoreBadge } from "@/components/recipes/health-score-badge";
+import { HealthScoreBadgeLink } from "@/components/recipes/health-score-badge";
 import { MacroTiles } from "@/components/recipes/macro-grid";
 import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { Button } from "@/components/ui/button";
@@ -110,7 +110,7 @@ export function RecipeDetailClient({
               {recipe.prepMinutes ? ` · ${recipe.prepMinutes} min` : ""}
             </p>
           </div>
-          <HealthScoreBadge score={score} />
+          <HealthScoreBadgeLink recipeId={recipe.id} score={score} />
         </div>
 
         <MacroTiles perServing={perServing} />

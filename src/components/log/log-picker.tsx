@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
 import { MealPriceText } from "@/components/recipes/meal-price-text";
+import { HealthScoreBadgeLink } from "@/components/recipes/health-score-badge";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
 import { inferLogStatus } from "@/lib/calendar/week";
 import { MEAL_LABELS, MEAL_ORDER, todayString, shiftDate } from "@/lib/log/compute";
@@ -20,6 +21,7 @@ type PickerItem = {
   id: number;
   name: string;
   kcal?: number;
+  score?: number;
   perMealCost?: number | null;
   costPartial?: boolean;
   accentIndex?: number;
@@ -229,6 +231,9 @@ export function LogPickerClient() {
                   </p>
                 )}
               </div>
+              {filter === "recipes" && item.score != null && item.score > 0 && (
+                <HealthScoreBadgeLink recipeId={item.id} score={item.score} size="sm" />
+              )}
               <button
                 type="button"
                 disabled={busy}

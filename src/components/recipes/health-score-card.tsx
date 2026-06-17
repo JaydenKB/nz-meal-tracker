@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 
 export function HealthScoreCard({ result }: { result: HealthScoreResult }) {
   const color =
-    result.score >= 75 ? "text-emerald-600" : result.score >= 50 ? "text-amber-600" : "text-red-600";
+    result.final >= 75 ? "text-emerald-600" : result.final >= 50 ? "text-amber-600" : "text-red-600";
 
   return (
     <Card>
@@ -13,19 +13,19 @@ export function HealthScoreCard({ result }: { result: HealthScoreResult }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-end gap-3">
-          <span className={`text-5xl font-bold ${color}`}>{result.score}</span>
+          <span className={`text-5xl font-bold ${color}`}>{result.final}</span>
           <span className="pb-2 text-zinc-500">/ 100</span>
         </div>
+        <p className="text-sm text-zinc-600">{result.summary}</p>
         <div className="flex flex-wrap gap-2">
           {result.reasons.map((reason) => (
             <Badge key={reason}>{reason}</Badge>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <ScoreBar label="Protein" value={result.breakdown.proteinDensity} max={25} />
-          <ScoreBar label="Balance" value={result.breakdown.macroBalance} max={25} />
-          <ScoreBar label="Calories" value={result.breakdown.calorieSanity} max={25} />
-          <ScoreBar label="Whole foods" value={result.breakdown.wholeFood} max={25} />
+        <div className="space-y-2 text-sm">
+          {result.components.map((c) => (
+            <ScoreBar key={c.key} label={c.label} value={c.points} max={c.maxPoints} />
+          ))}
         </div>
       </CardContent>
     </Card>

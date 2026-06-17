@@ -11,6 +11,7 @@ export async function GET() {
       name: r.recipe.name,
       type: "recipe" as const,
       kcal: Math.round(r.kcal),
+      score: r.score,
       perMealCost: r.perMealCost,
       costPartial: r.costPartial,
     })),

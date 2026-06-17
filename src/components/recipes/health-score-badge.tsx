@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function healthScoreColor(score: number): string {
@@ -33,6 +34,29 @@ export function HealthScoreBadge({
     >
       {Math.round(score)}
     </div>
+  );
+}
+
+/** Tappable badge linking to the score breakdown for a saved recipe. */
+export function HealthScoreBadgeLink({
+  recipeId,
+  score,
+  size = "md",
+  className,
+}: {
+  recipeId: number;
+  score: number;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
+  return (
+    <Link
+      href={`/recipes/${recipeId}/score`}
+      className={cn("inline-flex transition-opacity active:opacity-80", className)}
+      aria-label={`Health score ${Math.round(score)} — view breakdown`}
+    >
+      <HealthScoreBadge score={score} size={size} />
+    </Link>
   );
 }
 

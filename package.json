@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:push": "drizzle-kit push",
     "db:seed": "curl -X POST http://localhost:3000/api/seed",
     "generate:icons": "node scripts/generate-icons.mjs"
@@ -35,6 +37,7 @@
     "eslint-config-next": "16.2.9",
     "sharp": "^0.35.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   }
 }

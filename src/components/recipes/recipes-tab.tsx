@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Plus, Search, Sparkles } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
-import { AiTag, HealthScoreBadge } from "@/components/recipes/health-score-badge";
+import { AiTag, HealthScoreBadgeLink } from "@/components/recipes/health-score-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MealPriceText } from "@/components/recipes/meal-price-text";
@@ -116,7 +116,11 @@ export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
                     name={featured.recipe.name}
                     imageUrl={featured.recipe.imageUrl}
                   />
-                  <HealthScoreBadge score={featured.score} className="absolute bottom-3 right-3 z-10" />
+                  <HealthScoreBadgeLink
+                    recipeId={featured.recipe.id}
+                    score={featured.score}
+                    className="absolute bottom-3 right-3 z-10"
+                  />
                 </div>
                 <div className="space-y-1 px-4 py-3.5">
                   <h3 className="font-medium text-[var(--foreground)]">{featured.recipe.name}</h3>
@@ -155,7 +159,12 @@ export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
                         imageUrl={recipe.imageUrl}
                         accentIndex={i}
                       />
-                      <HealthScoreBadge score={score} size="sm" className="absolute bottom-2 right-2 z-10" />
+                      <HealthScoreBadgeLink
+                        recipeId={recipe.id}
+                        score={score}
+                        size="sm"
+                        className="absolute bottom-2 right-2 z-10"
+                      />
                     </div>
                     <div className="space-y-0.5 px-3 py-2.5">
                       <h3 className="truncate text-sm font-medium">{recipe.name}</h3>

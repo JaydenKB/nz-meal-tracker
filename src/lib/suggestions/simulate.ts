@@ -1,6 +1,7 @@
 import type { Ingredient } from "@/lib/db/schema";
 import type { Macros } from "@/lib/nutrition/calculate";
 import type { SuggestionAction } from "@/lib/suggestions/ollama";
+import { resolveSuggestionAction } from "@/lib/suggestions/infer";
 
 export type MacroDelta = {
   calories: number;
@@ -27,7 +28,7 @@ export function simulateSuggestion(
   s: SuggestionAction,
   ingredientMap: Map<number, Ingredient>,
 ): SimLine[] {
-  const action = s.action ?? "adjust";
+  const action = resolveSuggestionAction(s);
   const copy = [...lines];
 
   const toSimLine = (ing: Ingredient, quantity: number, unit: string): SimLine => ({

@@ -62,6 +62,9 @@ export function buildSuggestionPrompt(input: {
   perServing: { calories: number; proteinG: number; fatG: number; carbsG: number };
   perServingNutrients?: ExtendedNutrients;
   healthScore: number;
+  scoreSummary?: string;
+  scoreComponents?: { label: string; points: number; maxPoints: number }[];
+  scorePenalties?: { label: string; points: number }[];
   allIngredients: { id: number; name: string; calories: number; proteinG: number; fatG: number; carbsG: number; defaultUnit: string }[];
 }): string {
   const ingredientList = input.ingredients
@@ -84,7 +87,11 @@ export function buildSuggestionPrompt(input: {
 Recipe: ${input.recipeName} (${input.servings} servings)
 Per serving: ${Math.round(input.perServing.calories)} kcal, ${input.perServing.proteinG}g protein, ${input.perServing.fatG}g fat, ${input.perServing.carbsG}g carbs
 Micronutrients per serving: ${nutrientLine}
-Current health score: ${input.healthScore}/100 (macros, fibre, sodium, sat fat, sugar, omega-3, vitamins & minerals)
+Current health score: ${input.healthScore}/100
+Score summary: ${input.scoreSummary ?? "—"}
+${input.scoreComponents?.length ? `Score breakdown: ${input.scoreComponents.map((c) => `${c.label} ${Math.round(c.points)}/${c.maxPoints}`).join(", ")}` : ""}
+${input.scorePenalties?.length ? `Penalties: ${input.scorePenalties.map((p) => `${p.label} −${p.points}`).join(", ")}` : ""}
+Target improvements that address weak components and penalties above — the app recomputes score from the same rules.
 
 Current ingredients:
 ${ingredientList}
@@ -98,7 +105,10 @@ Suggest 2-4 concrete improvements. Include a MIX of approaches:
 - ADJUST portions up or down when it makes sense
 
 Do NOT only suggest removals or reductions. At least one suggestion should ADD something beneficial.
-The app computes health score and macro changes — your score_delta is advisory only.
+
+CRITICAL: Every suggestion MUST include valid ingredient IDs from the lists above and a concrete action.
+The app SIMULATES each change with the real health-score algorithm — suggestions that do not improve the score by at least +1 point are DISCARDED. Only propose changes you expect to help protein density, reduce sodium/sugar/sat-fat penalties, or add fibre/micronutrients without backfiring.
+Prefer reducing high-sodium ingredients and adding lean protein or greens over vague advice.
 
 For "add" actions always include quantity (typically 50–150g) and unit (g/ml/each).
 For "swap" include ingredient_id and new_ingredient_id from the lists above.
