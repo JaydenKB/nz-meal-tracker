@@ -1,0 +1,59 @@
+---
+description: Commit completed work immediately; push to GitHub after every 3 unpushed commits
+alwaysApply: true
+---
+
+# Git — auto-commit and staged push
+
+When you **finish** a task (feature, fix, refactor, or other substantive change) and there are file changes:
+
+1. **Commit immediately** — do not leave completed work uncommitted waiting for the user to ask.
+2. **Then check whether to push** (see below).
+
+This overrides “only commit when the user asks” for this project.
+
+## When to commit
+
+Commit when the task is done and the diff is intentional:
+
+- New feature or flow complete
+- Bug fix verified
+- Refactor or test pass complete for the requested scope
+
+Do **not** commit:
+
+- Half-finished work the user may still steer
+- `.env`, keys, credentials, or other secrets
+- Empty commits (no changes)
+
+## Commit message
+
+- One concise subject (imperative, ~72 chars)
+- Optional body: **why**, not a file list
+- Match existing repo style (`git log -5`)
+
+## After every commit — push every 3 unpushed commits
+
+Run (in order):
+
+```bash
+git fetch origin 2>/dev/null || true
+git rev-parse --abbrev-ref HEAD
+git rev-list --count @{u}..HEAD 2>/dev/null || git rev-list --count origin/main..HEAD 2>/dev/null
+```
+
+- If the branch has **no upstream**, push once with `git push -u origin HEAD` and stop counting until the next commits.
+- If **count ≥ 3**, push: `git push origin HEAD`
+- If **count < 3**, do not push; tell the user only when relevant (e.g. “2 commits ahead of origin — will push after the next commit”).
+
+Never `git push --force` to `main` or `master`. Never change git config.
+
+## Commit failures
+
+If a pre-commit hook fails: fix the issue and create a **new** commit; do not amend unless the user’s amend rules allow it.
+
+## End of session
+
+If there are **uncommitted** completed changes, commit before ending.
+
+If there are **1–2 unpushed commits** and the session is ending, mention they are still local unless the user wants an immediate push.
