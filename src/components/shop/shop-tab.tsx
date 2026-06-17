@@ -115,13 +115,19 @@ export function ShopTabClient({
             My pantry
           </Button>
         </Link>
-        <Link href="/ingredients/import">
+        <Link href="/shop/pantry/restock">
           <Button variant="ai" className="w-full">
             <Camera className="h-4 w-4" />
-            Scan receipt
+            Photo restock
           </Button>
         </Link>
       </div>
+
+      <Link href="/ingredients/import">
+        <Button variant="secondary" className="w-full">
+          Scan receipt
+        </Button>
+      </Link>
 
       <div className="grid grid-cols-2 gap-2.5">
         <Link href="/ingredients">

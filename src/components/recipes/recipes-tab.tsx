@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { Plus, Search, Sparkles } from "lucide-react";
+import { ChefHat, Plus, Search, Sparkles } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
 import { AiTag, HealthScoreBadgeLink } from "@/components/recipes/health-score-badge";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,13 @@ type RecipeItem = {
   costPartial: boolean;
 };
 
-export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
+export function RecipesTabClient({
+  recipes,
+  cookNowCount = 0,
+}: {
+  recipes: RecipeItem[];
+  cookNowCount?: number;
+}) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -87,6 +93,18 @@ export function RecipesTabClient({ recipes }: { recipes: RecipeItem[] }) {
           </Button>
         </Link>
       </div>
+
+      <Link href="/recipes/cook-from-pantry">
+        <Button variant="secondary" className="w-full">
+          <ChefHat className="h-4 w-4" strokeWidth={2} />
+          Cook from pantry
+          {cookNowCount > 0 && (
+            <span className="ml-1 rounded-full bg-[var(--green-soft)] px-2 py-0.5 text-xs font-medium text-[var(--primary)]">
+              {cookNowCount} ready
+            </span>
+          )}
+        </Button>
+      </Link>
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />

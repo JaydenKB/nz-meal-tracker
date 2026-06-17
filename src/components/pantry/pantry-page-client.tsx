@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Camera, Plus } from "lucide-react";
+import { ArrowLeft, Camera, ChefHat, Plus } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,13 +82,26 @@ export function PantryPageClient({ items }: { items: PantryItemView[] }) {
           <Plus className="h-4 w-4" />
           Add stock
         </Button>
-        <Link href="/ingredients/import">
+        <Link href="/shop/pantry/restock">
           <Button variant="ai" className="w-full">
             <Camera className="h-4 w-4" />
-            Scan receipt
+            Photo restock
           </Button>
         </Link>
       </div>
+
+      <Link href="/ingredients/import">
+        <Button variant="secondary" className="w-full">
+          Scan receipt
+        </Button>
+      </Link>
+
+      <Link href="/recipes/cook-from-pantry">
+        <Button variant="secondary" className="w-full">
+          <ChefHat className="h-4 w-4" strokeWidth={2} />
+          Cook from pantry
+        </Button>
+      </Link>
 
       <div className="flex gap-2">
         {(["all", "low", "staples"] as const).map((f) => (
@@ -162,7 +175,11 @@ export function PantryPageClient({ items }: { items: PantryItemView[] }) {
           >
             <h3 className="text-lg font-medium">Add stock</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Use the ingredient ID from your library.{" "}
+              Use the ingredient ID from your library, or{" "}
+              <Link href="/shop/pantry/restock" className="text-[var(--primary)]">
+                photo restock
+              </Link>
+              .{" "}
               <Link href="/ingredients" className="text-[var(--primary)]">
                 Browse ingredients
               </Link>

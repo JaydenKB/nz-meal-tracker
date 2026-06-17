@@ -13,6 +13,7 @@ type AiLoaderProps =
       itemsFound: number;
       chipStatuses?: ScanChipStatus[];
       activePreview?: string;
+      subtitle?: string;
     }
   | {
       variant: "elaborate";
@@ -43,6 +44,7 @@ export function AiLoader(props: AiLoaderProps) {
     itemsFound,
     chipStatuses,
     activePreview,
+    subtitle = "Reading prices & sizes",
   } = props;
 
   const progress = total > 0 ? completedImages / total : 0;
@@ -74,7 +76,7 @@ export function AiLoader(props: AiLoaderProps) {
         <div className="min-w-0 flex-1 space-y-3">
           <div>
             <p className="font-semibold leading-snug">{headline}</p>
-            <p className="mt-0.5 text-sm text-[var(--muted)]">Reading prices &amp; sizes</p>
+            <p className="mt-0.5 text-sm text-[var(--muted)]">{subtitle}</p>
           </div>
 
           <div className="space-y-1.5">

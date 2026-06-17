@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
+  ChefHat,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -66,9 +67,11 @@ type WeekData = {
 export function WeekCalendarClient({
   streakDays,
   calorieTarget,
+  cookNowCount = 0,
 }: {
   streakDays: number;
   calorieTarget: number;
+  cookNowCount?: number;
 }) {
   const router = useRouter();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayString()));
@@ -175,6 +178,18 @@ export function WeekCalendarClient({
           target={calorieTarget}
           remaining={Math.max(0, calorieTarget - Math.round(eatenTodayCalories))}
         />
+      )}
+
+      {cookNowCount > 0 && (
+        <Link
+          href="/recipes/cook-from-pantry"
+          className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--green-soft)] px-4 py-3"
+        >
+          <ChefHat className="h-5 w-5 shrink-0 text-[var(--primary)]" strokeWidth={2} />
+          <p className="text-sm font-medium text-[var(--foreground)]">
+            You can cook {cookNowCount} recipe{cookNowCount === 1 ? "" : "s"} now
+          </p>
+        </Link>
       )}
 
       {data && (

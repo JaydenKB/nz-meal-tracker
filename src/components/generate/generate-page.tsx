@@ -23,7 +23,11 @@ type IngredientOption = { id: number; name: string };
 
 const DEFAULT_NAMES = ["chicken breast", "brown rice", "broccoli", "quinoa", "spinach"];
 
-export function GeneratePageClient() {
+export function GeneratePageClient({
+  initialSelectedIds,
+}: {
+  initialSelectedIds?: number[];
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<GenerateMode>("pick");
   const [allIngredients, setAllIngredients] = useState<IngredientOption[]>([]);
@@ -48,6 +52,11 @@ export function GeneratePageClient() {
       .then((data) => {
         const list: IngredientOption[] = data.ingredients ?? [];
         setAllIngredients(list);
+        if (initialSelectedIds?.length) {
+          const valid = initialSelectedIds.filter((id) => list.some((i) => i.id === id));
+          setSelectedIds(valid.length > 0 ? valid : list.slice(0, 3).map((i) => i.id));
+          return;
+        }
         const defaults = list
           .filter((i) =>
             DEFAULT_NAMES.some((n) => i.name.toLowerCase().includes(n)),
@@ -56,7 +65,7 @@ export function GeneratePageClient() {
           .map((i) => i.id);
         setSelectedIds(defaults.length > 0 ? defaults : list.slice(0, 3).map((i) => i.id));
       });
-  }, []);
+  }, [initialSelectedIds]);
 
   const selectedIngredients = allIngredients.filter((i) => selectedIds.includes(i.id));
   const availableToAdd = allIngredients.filter((i) => !selectedIds.includes(i.id));

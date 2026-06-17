@@ -176,17 +176,28 @@ export async function openaiVisionJson(
   prompt: string,
   image: string,
 ): Promise<string> {
+  return openaiVisionJsonMulti(client, model, prompt, [image]);
+}
+
+export async function openaiVisionJsonMulti(
+  client: OpenAI,
+  model: string,
+  prompt: string,
+  images: string[],
+): Promise<string> {
+  const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+    { type: "text", text: prompt },
+    ...images.map(
+      (image): OpenAI.Chat.Completions.ChatCompletionContentPart => ({
+        type: "image_url",
+        image_url: { url: toDataUrl(image), detail: "high" },
+      }),
+    ),
+  ];
+
   const response = await client.chat.completions.create({
     model,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          { type: "image_url", image_url: { url: toDataUrl(image), detail: "high" } },
-        ],
-      },
-    ],
+    messages: [{ role: "user", content }],
     response_format: { type: "json_object" },
   });
 
