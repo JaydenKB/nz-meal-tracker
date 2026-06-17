@@ -315,7 +315,14 @@ textarea {
   animation: splash-fade-out 0.25s ease 0.5s forwards;
 }
 
-/* ── OCR / AI / timer (unchanged behaviour) ── */
+.splash-static .splash-mark,
+.splash-static .splash-ring-progress,
+.splash-static .splash-title,
+.splash-static .splash-tagline {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
 .ocr-scan-beam {
   background: linear-gradient(
     180deg,
