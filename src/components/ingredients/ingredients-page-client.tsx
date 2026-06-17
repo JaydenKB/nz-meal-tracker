@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ChevronRight, Plus, Scan, Search } from "lucide-react";
+import { ArrowLeft, Barcode, ChevronRight, Plus, Scan, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AddIngredientForm } from "@/components/ingredients/add-ingredient-form";
 import { Button } from "@/components/ui/button";
@@ -56,10 +56,17 @@ export function IngredientsPageClient({
         />
       </div>
 
+      <Link href="/ingredients/barcode">
+        <Button className="w-full">
+          <Barcode className="h-4 w-4" />
+          Scan barcode
+        </Button>
+      </Link>
+
       <div className="grid grid-cols-2 gap-2.5">
-        <Button className="w-full" onClick={() => setShowAdd(!showAdd)}>
+        <Button variant="secondary" className="w-full" onClick={() => setShowAdd(!showAdd)}>
           <Plus className="h-4 w-4" strokeWidth={2.5} />
-          Add
+          Add manually
         </Button>
         <Link
           href="/ingredients/import"
@@ -68,7 +75,7 @@ export function IngredientsPageClient({
           )}
         >
           <Scan className="h-4 w-4" />
-          Scan
+          Label scan
         </Link>
       </div>
 

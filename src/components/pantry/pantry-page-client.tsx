@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Camera, ChefHat, Plus } from "lucide-react";
+import { ArrowLeft, Barcode, Camera, ChefHat, Plus } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,10 +77,17 @@ export function PantryPageClient({ items }: { items: PantryItemView[] }) {
         <TabHeader title="My pantry" subtitle="What you've got at home." />
       </div>
 
+      <Link href="/shop/pantry/barcode">
+        <Button className="w-full">
+          <Barcode className="h-4 w-4" />
+          Scan barcode
+        </Button>
+      </Link>
+
       <div className="grid grid-cols-2 gap-2.5">
-        <Button className="w-full" onClick={() => setShowAdd(true)}>
+        <Button variant="secondary" className="w-full" onClick={() => setShowAdd(true)}>
           <Plus className="h-4 w-4" />
-          Add stock
+          Add by ID
         </Button>
         <Link href="/shop/pantry/restock">
           <Button variant="ai" className="w-full">
@@ -176,6 +183,10 @@ export function PantryPageClient({ items }: { items: PantryItemView[] }) {
             <h3 className="text-lg font-medium">Add stock</h3>
             <p className="mt-1 text-sm text-[var(--muted)]">
               Use the ingredient ID from your library, or{" "}
+              <Link href="/shop/pantry/barcode" className="text-[var(--primary)]">
+                scan a barcode
+              </Link>
+              ,{" "}
               <Link href="/shop/pantry/restock" className="text-[var(--primary)]">
                 photo restock
               </Link>

@@ -107,6 +107,7 @@ export function initDb() {
   migrateAppSettingsAnthropic();
   migrateIngredientNutrients();
   migrateIngredientPantryFields();
+  migrateIngredientBarcode();
   migratePantryTables();
   migrateLogStatus();
   seedIngredientConversions();
@@ -130,6 +131,25 @@ function migrateIngredientPantryFields() {
   }
   if (!cols.some((c) => c.name === "ml_per_gram")) {
     add("ALTER TABLE ingredients ADD COLUMN ml_per_gram REAL");
+  }
+}
+
+function migrateIngredientBarcode() {
+  const cols = sqlite.prepare("PRAGMA table_info(ingredients)").all() as { name: string }[];
+  if (!cols.some((c) => c.name === "barcode")) {
+    try {
+      sqlite.exec("ALTER TABLE ingredients ADD COLUMN barcode TEXT");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate column")) throw error;
+    }
+  }
+  try {
+    sqlite.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS ingredients_barcode_unique ON ingredients(barcode) WHERE barcode IS NOT NULL",
+    );
+  } catch {
+    /* index may already exist */
   }
 }
 

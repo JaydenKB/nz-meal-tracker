@@ -45,6 +45,7 @@ export function PhotoRestockCreateClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const hintName = searchParams.get("name") ?? "";
+  const seedBarcode = searchParams.get("barcode") ?? "";
 
   const [front, setFront] = useState<LabelImage>(null);
   const [back, setBack] = useState<LabelImage>(null);
@@ -113,6 +114,7 @@ export function PhotoRestockCreateClient() {
           isProcessed: draft.isProcessed,
           pantryQuantity: draft.packageSize,
           pantryUnit: "g",
+          barcode: seedBarcode || undefined,
         }),
       });
       const data = await res.json();
@@ -147,6 +149,7 @@ export function PhotoRestockCreateClient() {
           <h1 className="text-xl font-medium">New ingredient</h1>
           <p className="text-sm text-[var(--muted)]">
             {hintName ? `${hintName} · scan both sides` : "Scan front + back label"}
+            {seedBarcode ? ` · barcode ${seedBarcode.slice(0, 10)}…` : ""}
           </p>
         </div>
       </div>

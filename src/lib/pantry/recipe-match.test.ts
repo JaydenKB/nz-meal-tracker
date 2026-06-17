@@ -21,6 +21,7 @@ function ing(partial: Partial<Ingredient> & { id: number; name: string }): Ingre
     canonicalUnit: "g",
     gramsPerUnit: null,
     mlPerGram: null,
+    barcode: null,
     ...partial,
   };
 }

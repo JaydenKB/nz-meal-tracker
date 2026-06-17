@@ -76,6 +76,7 @@ type SaveBody = {
   isProcessed?: boolean;
   pantryQuantity?: number;
   pantryUnit?: string;
+  barcode?: string;
 };
 
 /** Create ingredient from label draft and add to pantry. */
@@ -90,11 +91,14 @@ export async function POST(request: Request) {
   const packageSize = Math.max(0, Number(body.packageSize ?? 0));
   const pantryQuantity = Number(body.pantryQuantity ?? packageSize);
   const pantryUnit = String(body.pantryUnit ?? "g");
+  const barcodeRaw = typeof body.barcode === "string" ? body.barcode.replace(/\D/g, "") : "";
+  const barcode = barcodeRaw.length >= 7 ? barcodeRaw : null;
 
   const [ingredient] = await db
     .insert(ingredients)
     .values({
       name,
+      barcode,
       defaultUnit: "g",
       calories: Math.round(Number(body.calories ?? 0)),
       proteinG: Math.round(Number(body.proteinG ?? 0) * 10) / 10,

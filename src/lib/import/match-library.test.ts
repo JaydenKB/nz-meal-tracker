@@ -18,6 +18,7 @@ function ing(id: number, name: string): Ingredient {
     canonicalUnit: "g",
     gramsPerUnit: null,
     mlPerGram: null,
+    barcode: null,
   };
 }
 

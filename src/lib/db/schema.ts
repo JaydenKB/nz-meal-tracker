@@ -18,6 +18,8 @@ export const ingredients = sqliteTable("ingredients", {
   gramsPerUnit: real("grams_per_unit"),
   /** Density (ml per gram) for volume ↔ mass when needed */
   mlPerGram: real("ml_per_gram"),
+  /** EAN/UPC barcode when added via scan — enables instant re-lookup */
+  barcode: text("barcode"),
 });
 
 export const pantryItems = sqliteTable("pantry_items", {
