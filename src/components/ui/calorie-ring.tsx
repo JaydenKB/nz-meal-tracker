@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useReducedMotion } from "@/lib/motion/use-reduced-motion";
 
 const DEFAULT_SIZE = 52;
 const DEFAULT_STROKE = 5;
@@ -8,7 +9,6 @@ const DEFAULT_STROKE = 5;
 type CalorieRingProps = {
   consumed?: number;
   target?: number;
-  /** 0–1 fill when consumed/target not used (splash) */
   fillPct?: number;
   size?: number;
   stroke?: number;
@@ -31,6 +31,7 @@ export function CalorieRing({
   className,
   id,
 }: CalorieRingProps) {
+  const reduced = useReducedMotion();
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct =
@@ -40,7 +41,7 @@ export function CalorieRing({
         ? Math.min(consumed / target, 1)
         : 0;
   const offset = c * (1 - pct);
-  const sweepTarget = c * 0.25; // splash fills ~75%
+  const sweepTarget = c * 0.25;
 
   const trackStroke =
     variant === "on-dark" ? "rgba(255,255,255,0.35)" : "rgba(15,110,86,0.15)";
@@ -75,7 +76,9 @@ export function CalorieRing({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={animateSweep ? c : offset}
-          className={animateSweep ? "splash-ring-progress" : undefined}
+          className={cn(
+            animateSweep ? "splash-ring-progress" : !reduced && "ring-fill-transition",
+          )}
           style={
             animateSweep
               ? ({

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
-import { ArrowLeft, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { ArrowLeft, ChefHat, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
 import { loadPantryReviewSession } from "@/lib/pantry/review-session";
@@ -159,6 +160,12 @@ export function CookFromPantryClient({
       ? `/generate?fromPantry=${pantryIngredientIds.slice(0, 12).join(",")}`
       : "/generate?fromPantry=1";
 
+  const totalMatches = cookNow.length + almost.length + notYet.length;
+  const filteredEmpty =
+    filtered.cookNow.length === 0 &&
+    filtered.almost.length === 0 &&
+    filtered.notYet.length === 0;
+
   return (
     <div className="mx-auto max-w-[430px] space-y-5 pb-8">
       <header className="flex items-center gap-3">
@@ -198,6 +205,8 @@ export function CookFromPantryClient({
         </div>
       )}
 
+      {!filteredEmpty && (
+        <>
       {freshCookNow.length > 0 && (
         <Section dotColor="bg-[var(--success)]" title="Newly available">
           {freshCookNow.map((m) => (
@@ -234,14 +243,34 @@ export function CookFromPantryClient({
           ))}
         </Section>
       )}
+        </>
+      )}
 
-      {filtered.cookNow.length === 0 &&
-        filtered.almost.length === 0 &&
-        filtered.notYet.length === 0 && (
-          <p className="rounded-[var(--radius-card)] bg-[var(--beige)] px-4 py-6 text-center text-sm text-[var(--muted)]">
-            No recipes match this filter. Try All or stock more pantry items.
-          </p>
-        )}
+      {filteredEmpty && (
+        totalMatches === 0 ? (
+          <EmptyState
+            icon={ChefHat}
+            iconTone="green"
+            title="Nothing makeable yet"
+            body="Stock your pantry first — we'll rank recipes by what you already have at home."
+            actions={[
+              { label: "Add to pantry", href: "/shop/pantry/add" },
+              { label: "Generate from pantry", href: generateHref, variant: "ai" },
+            ]}
+          />
+        ) : (
+          <EmptyState
+            icon={ChefHat}
+            iconTone="amber"
+            title="No recipes match this filter"
+            body="Try All, or stock a few more staples to unlock more meals."
+            actions={[
+              { label: "Show all", onClick: () => setFilter("all"), variant: "secondary" },
+              { label: "Add to pantry", href: "/shop/pantry/add" },
+            ]}
+          />
+        )
+      )}
 
       <Link href={generateHref}>
         <Button variant="ai" className="w-full">

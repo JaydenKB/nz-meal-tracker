@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Barcode, ChevronRight, Plus, Scan, Search } from "lucide-react";
+import { ArrowLeft, Barcode, ChevronRight, Plus, Scan, Search, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AddIngredientForm } from "@/components/ingredients/add-ingredient-form";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
 
@@ -87,8 +88,33 @@ export function IngredientsPageClient({
         </div>
       )}
 
-      <div className="space-y-2">
-        {filtered.map((ing, idx) => (
+      {filtered.length === 0 ? (
+        initial.length === 0 ? (
+          <EmptyState
+            icon={ShoppingBasket}
+            iconTone="mint"
+            title="Build your ingredient library"
+            body="Ingredients power recipes, pantry tracking, and nutrition — add them once, use them everywhere."
+            actions={[
+              { label: "Add manually", href: "/ingredients/add" },
+              { label: "Scan a label", href: "/ingredients/import", variant: "ai" },
+            ]}
+          />
+        ) : (
+          <EmptyState
+            icon={Search}
+            iconTone="blue"
+            title="No matches"
+            body="Try a different search, or add a new ingredient to your library."
+            actions={[
+              { label: "Clear search", onClick: () => setQuery(""), variant: "secondary" },
+              { label: "Add ingredient", href: "/ingredients/add" },
+            ]}
+          />
+        )
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((ing, idx) => (
           <Link
             key={ing.id}
             href={`/ingredients/${ing.id}`}
@@ -111,7 +137,8 @@ export function IngredientsPageClient({
             <ChevronRight className="h-4 w-4 shrink-0 text-[var(--muted)]" />
           </Link>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

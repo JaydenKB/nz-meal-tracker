@@ -1,5 +1,6 @@
 import type { LogStatus } from "@/lib/db/schema";
 import { playHighest, type SfxType } from "@/lib/sfx";
+import { applyRewardFeedback, type RewardFeedback } from "@/lib/rewards/feedback";
 
 export type LogRewardContext = {
   log: {
@@ -22,15 +23,32 @@ export async function captureLogRewardContext(date: string): Promise<LogRewardCo
   return { log, progress, goals };
 }
 
+function buildFeedback(tier: SfxType, streakDays?: number): RewardFeedback {
+  const messages: Record<SfxType, string> = {
+    milestone: "Milestone unlocked! 🏆",
+    streak: `Logged! 🎉 · ${streakDays ?? ""}-day streak`.replace(" · -day", ""),
+    goalHit: "Daily goal hit! 🎯",
+    log: "Logged! ✓",
+    error: "Something went wrong",
+  };
+  return {
+    message: messages[tier],
+    tier,
+    confetti: tier === "milestone",
+  };
+}
+
 /** After a successful log/mark-eaten, play the highest-tier reward sound. */
 export async function playRewardsAfterMealLog(
   before: LogRewardContext,
   date: string,
   status: LogStatus,
-) {
+): Promise<RewardFeedback> {
   if (status === "planned") {
     playHighest(["log"]);
-    return;
+    const feedback = buildFeedback("log");
+    applyRewardFeedback(feedback);
+    return feedback;
   }
 
   try {
@@ -72,9 +90,24 @@ export async function playRewardsAfterMealLog(
       tiers.push("goalHit");
     }
 
+    const tier =
+      tiers.length > 0
+        ? (["milestone", "streak", "goalHit", "log"] as SfxType[]).find((p) =>
+            tiers.includes(p),
+          ) ?? "log"
+        : "log";
     playHighest(tiers.length > 0 ? tiers : ["log"]);
+    const feedback = buildFeedback(
+      tier,
+      tier === "streak" ? afterProgress.streakDays : undefined,
+    );
+    applyRewardFeedback(feedback);
+    return feedback;
   } catch {
     playHighest(["log"]);
+    const feedback = buildFeedback("log");
+    applyRewardFeedback(feedback);
+    return feedback;
   }
 }
 

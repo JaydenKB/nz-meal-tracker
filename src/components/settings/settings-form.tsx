@@ -14,6 +14,7 @@ import { ANTHROPIC_TEXT_MODELS } from "@/lib/anthropic/client";
 import { providerTradeoff } from "@/lib/ai/settings";
 import type { AiProvider } from "@/lib/db/schema";
 import { sfxEnabled, setSfxEnabled } from "@/lib/sfx";
+import { hapticsEnabled, setHapticsEnabled } from "@/lib/haptics";
 import { SfxPreview } from "@/components/settings/sfx-preview";
 
 function SettingsSection({
@@ -112,6 +113,7 @@ export function SettingsForm({ layout = "default" }: { layout?: "default" | "gro
   const [textReady, setTextReady] = useState<boolean | null>(null);
   const [visionReady, setVisionReady] = useState<boolean | null>(null);
   const [soundOn, setSoundOn] = useState(true);
+  const [hapticsOn, setHapticsOn] = useState(true);
   const [showGoals, setShowGoals] = useState(false);
   const [showAi, setShowAi] = useState<string | null>(null);
   const [warming, setWarming] = useState(false);
@@ -120,6 +122,7 @@ export function SettingsForm({ layout = "default" }: { layout?: "default" | "gro
 
   useEffect(() => {
     setSoundOn(sfxEnabled());
+    setHapticsOn(hapticsEnabled());
     Promise.all([
       fetch("/api/goals").then((r) => r.json()),
       fetch("/api/settings").then((r) => r.json()),
@@ -312,6 +315,12 @@ export function SettingsForm({ layout = "default" }: { layout?: "default" | "gro
     const next = !soundOn;
     setSoundOn(next);
     setSfxEnabled(next);
+  }
+
+  function toggleHaptics() {
+    const next = !hapticsOn;
+    setHapticsOn(next);
+    setHapticsEnabled(next);
   }
 
   if (layout === "grouped") {
@@ -617,6 +626,17 @@ export function SettingsForm({ layout = "default" }: { layout?: "default" | "gro
             />
           </div>
           <SfxPreview enabled={soundOn} />
+          <div className="flex items-center justify-between border-b border-[var(--border)] bg-white px-4 py-3.5">
+            <div>
+              <span className="text-sm text-[var(--foreground)]">Haptic feedback</span>
+              <p className="text-xs text-[var(--muted)]">Light vibration on log & milestones (Android)</p>
+            </div>
+            <ToggleSwitch
+              checked={hapticsOn}
+              onChange={toggleHaptics}
+              label="Haptic feedback"
+            />
+          </div>
           <button
             type="button"
             onClick={() => setShowGoals(!showGoals)}

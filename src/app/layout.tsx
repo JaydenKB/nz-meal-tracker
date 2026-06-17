@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { MainShell } from "@/components/layout/main-shell";
 import { LaunchSplash } from "@/components/shell/launch-splash";
+import { ToastProvider } from "@/components/toast/toast-provider";
+import { ConfettiHost } from "@/components/motion/confetti-host";
 import { SfxInit } from "@/components/sfx/sfx-init";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { SW_RECOVERY_SCRIPT } from "@/lib/pwa/sw-recovery-script";
@@ -53,10 +55,13 @@ export default function RootLayout({
         <ServiceWorkerRegister />
         <SfxInit />
         <LaunchSplash />
-        <div className="relative mx-auto min-h-full max-w-[430px] bg-transparent shadow-none">
-          <MainShell>{children}</MainShell>
-          <BottomNav />
-        </div>
+        <ToastProvider>
+          <ConfettiHost />
+          <div className="relative mx-auto min-h-full max-w-[430px] bg-transparent shadow-none">
+            <MainShell>{children}</MainShell>
+            <BottomNav />
+          </div>
+        </ToastProvider>
       </body>
     </html>
   );

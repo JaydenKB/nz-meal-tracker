@@ -377,6 +377,122 @@ textarea {
   animation: timer-pulse 0.8s ease-out 2;
 }
 
+/* ── Skeleton shimmer ── */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--beige) 0%,
+    #faf6f0 40%,
+    var(--beige) 80%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Empty state float ── */
+@keyframes empty-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.empty-float {
+  animation: empty-float 3s ease-in-out infinite;
+}
+
+/* ── Toast ── */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 0.35s var(--ease-spring) both;
+}
+
+/* ── Pull-to-refresh spinner ── */
+@keyframes ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ptr-spinner-active > div {
+  animation: ptr-spin 0.7s linear infinite;
+}
+
+/* ── Recipe image fade-in ── */
+.recipe-image-enter {
+  opacity: 0;
+  transform: scale(1.03);
+  transition:
+    opacity 0.45s var(--ease-out),
+    transform 0.45s var(--ease-out);
+}
+
+.recipe-image-loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.recipe-image-placeholder {
+  transition: opacity 0.35s var(--ease-out);
+}
+
+/* ── Animated stock / progress bars ── */
+.stock-bar-fill {
+  transition: width 0.65s var(--ease-out);
+}
+
+.progress-bar-fill {
+  transition: height 0.65s var(--ease-out);
+}
+
+.ring-fill-transition {
+  transition: stroke-dashoffset 0.65s var(--ease-out);
+}
+
+/* ── Bottom nav active icon ── */
+.nav-icon-active {
+  animation: nav-icon-rise 0.35s var(--ease-spring) both;
+}
+
+@keyframes nav-icon-rise {
+  from {
+    transform: translateY(4px);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
+.nav-indicator {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-spring);
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   :root {
@@ -407,5 +523,19 @@ textarea {
 
   .toggle-track[data-on="true"] .toggle-knob {
     transform: translateX(22px);
+  }
+
+  .skeleton-shimmer,
+  .empty-float,
+  .toast-enter,
+  .toast-exit,
+  .ptr-spinner-active,
+  .recipe-image-enter,
+  .stock-bar-fill,
+  .progress-bar-fill,
+  .ring-fill-transition,
+  .nav-icon-active {
+    animation: none !important;
+    transition: none !important;
   }
 }

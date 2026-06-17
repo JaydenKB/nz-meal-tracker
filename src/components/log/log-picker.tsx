@@ -11,6 +11,8 @@ import { Pill } from "@/components/ui/pill";
 import { MealPriceText } from "@/components/recipes/meal-price-text";
 import { HealthScoreBadgeLink } from "@/components/recipes/health-score-badge";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LogPickerSkeleton } from "@/components/ui/skeleton";
 import { inferLogStatus } from "@/lib/calendar/week";
 import { MEAL_LABELS, MEAL_ORDER, todayString, shiftDate } from "@/lib/log/compute";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
@@ -49,8 +51,10 @@ export function LogPickerClient() {
   const [recipes, setRecipes] = useState<PickerItem[]>([]);
   const [ingredients, setIngredients] = useState<PickerItem[]>([]);
   const [busy, setBusy] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
 
   useEffect(() => {
+    setListLoading(true);
     Promise.all([
       fetch("/api/recipes-list").then((r) => r.json()),
       fetch("/api/ingredients-list").then((r) => r.json()),
@@ -62,6 +66,7 @@ export function LogPickerClient() {
         })),
       );
       setIngredients(i.ingredients ?? []);
+      setListLoading(false);
     });
   }, []);
 
@@ -230,6 +235,25 @@ export function LogPickerClient() {
             Switch to ingredients
           </Button>
         </div>
+      ) : listLoading ? (
+        <LogPickerSkeleton />
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Search}
+          iconTone="blue"
+          title="No matches"
+          body={
+            filter === "ingredients"
+              ? "Try another search or add the ingredient to your library first."
+              : "Try another search or create a new recipe."
+          }
+          actions={[
+            { label: "Clear search", onClick: () => setQuery(""), variant: "secondary" },
+            filter === "recipes"
+              ? { label: "New recipe", href: "/recipes/new" }
+              : { label: "Add ingredient", href: "/ingredients/add" },
+          ]}
+        />
       ) : (
         <div className="space-y-2">
           {items.map((item, idx) => (

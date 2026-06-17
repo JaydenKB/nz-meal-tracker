@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ChefHat, Plus } from "lucide-react";
+import { ArrowLeft, Barcode, ChefHat, Package, Plus } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
+import { StockBar } from "@/components/ui/stock-bar";
+import { SwipeRow } from "@/components/ui/swipe-row";
 import { getRecipeAccent } from "@/lib/theme";
 
 import { PantryReconcileBanner } from "@/components/pantry/pantry-reconcile-client";
@@ -134,52 +137,73 @@ export function PantryPageClient({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white px-4 py-8 text-center text-sm text-[var(--muted)]">
-          {items.length === 0
-            ? "Pantry empty — add stock or mark shopping items as bought."
-            : "Nothing matches this filter."}
-        </p>
+        items.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            iconTone="green"
+            title="Your pantry is empty"
+            body="Track what’s at home so cooking mode deducts stock and we can suggest recipes you can make now."
+            actions={[
+              { label: "Add your first items", href: "/shop/pantry/add" },
+              { label: "Scan a barcode", href: "/shop/pantry/add", variant: "secondary" },
+            ]}
+            tip="Mark shopping items as bought to fill your pantry automatically."
+          />
+        ) : (
+          <EmptyState
+            icon={Package}
+            iconTone="amber"
+            title="Nothing matches"
+            body="Try a different filter, or add more stock to your pantry."
+            actions={[{ label: "Show all", onClick: () => setFilter("all"), variant: "secondary" }]}
+          />
+        )
       ) : (
-        <div className="space-y-2 rounded-[var(--radius-card)] border border-[var(--border)] bg-white p-2">
+        <div className="space-y-2 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[var(--shadow-sm)]">
           {filtered.map((item, i) => (
-            <Link
+            <SwipeRow
               key={item.id}
-              href={`/shop/pantry/${item.id}`}
-              className="flex items-center gap-3 rounded-[var(--radius)] px-3 py-3 hover:bg-[var(--beige)]/50"
+              actions={[
+                {
+                  label: "Edit",
+                  onClick: () => {
+                    window.location.href = `/shop/pantry/${item.id}`;
+                  },
+                  tone: "edit",
+                },
+              ]}
             >
-              <div
-                className="h-10 w-10 shrink-0 rounded-xl"
-                style={{ backgroundColor: getRecipeAccent(item.ingredientId + i) }}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium text-[var(--foreground)]">
-                    {item.name}
-                  </p>
-                  {item.isStaple && (
-                    <span className="rounded-full bg-[var(--beige)] px-2 py-0.5 text-[10px] font-medium uppercase text-[var(--muted)]">
-                      staple
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--beige)]">
-                  <div
-                    className={`h-full rounded-full transition-[width] ${
-                      item.stockLevel === "low" ? "bg-[var(--streak)]" : "bg-[var(--success)]"
-                    }`}
-                    style={{ width: `${item.barPct}%` }}
-                  />
-                </div>
-              </div>
-              <p
-                className={`shrink-0 text-sm tabular-nums ${
-                  item.stockLevel === "low" ? "font-medium text-[var(--streak)]" : "text-[var(--muted)]"
-                }`}
+              <Link
+                href={`/shop/pantry/${item.id}`}
+                className="flex items-center gap-3 rounded-[var(--radius)] px-3 py-3 hover:bg-[var(--beige)]/50"
               >
-                {item.displayQty}
-                {item.stockLevel === "low" ? " · low" : ""}
-              </p>
-            </Link>
+                <div
+                  className="h-10 w-10 shrink-0 rounded-[var(--radius-icon)]"
+                  style={{ backgroundColor: getRecipeAccent(item.ingredientId + i) }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-[var(--foreground)]">
+                      {item.name}
+                    </p>
+                    {item.isStaple && (
+                      <span className="rounded-full bg-[var(--beige)] px-2 py-0.5 text-[10px] font-medium uppercase text-[var(--muted)]">
+                        staple
+                      </span>
+                    )}
+                  </div>
+                  <StockBar pct={item.barPct} level={item.stockLevel} className="mt-1.5" />
+                </div>
+                <p
+                  className={`shrink-0 text-sm tabular-nums ${
+                    item.stockLevel === "low" ? "font-medium text-[var(--streak)]" : "text-[var(--muted)]"
+                  }`}
+                >
+                  {item.displayQty}
+                  {item.stockLevel === "low" ? " · low" : ""}
+                </p>
+              </Link>
+            </SwipeRow>
           ))}
         </div>
       )}

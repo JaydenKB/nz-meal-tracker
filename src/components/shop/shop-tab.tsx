@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Camera, ChevronRight, Package, Plus, ShoppingBasket, Store } from "lucide-react";
 import { TabHeader } from "@/components/layout/tab-header";
+import { PullToRefresh } from "@/components/motion/pull-to-refresh";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeader } from "@/components/ui/section-header";
+import { toastAction } from "@/lib/rewards/feedback";
 import {
   appendPantryReviewLines,
   shoppingItemToReviewLine,
@@ -57,7 +60,6 @@ export function ShopTabClient({
   const router = useRouter();
   const [checked, setChecked] = useState<Record<number, boolean>>({});
   const [reAdded, setReAdded] = useState<Record<number, boolean>>({});
-  const [buyMessage, setBuyMessage] = useState<string | null>(null);
 
   const needItems = useMemo(() => {
     const items: ShopItem[] = [];
@@ -80,7 +82,7 @@ export function ShopTabClient({
   async function markAsBought() {
     const selected = needItems.filter((i) => checked[i.ingredientId]);
     if (selected.length === 0) {
-      setBuyMessage("Select items to add to pantry");
+      toastAction("Select items to add to pantry", "info");
       return;
     }
 
@@ -95,10 +97,12 @@ export function ShopTabClient({
     ).map((l) => shoppingItemToReviewLine(l));
 
     appendPantryReviewLines(lines);
+    toastAction(`${selected.length} item${selected.length === 1 ? "" : "s"} ready to review`);
     router.push("/shop/pantry/review");
   }
 
   return (
+    <PullToRefresh onRefresh={() => router.refresh()}>
     <div className="mx-auto max-w-[430px] space-y-5 pb-28">
       <TabHeader title="Shop" />
 
@@ -154,9 +158,17 @@ export function ShopTabClient({
         )}
 
         {groups.length === 0 && visibleOwned.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white px-4 py-8 text-center text-sm text-[var(--muted)]">
-            No shopping list yet. Create a batch from a recipe to get started.
-          </p>
+          <EmptyState
+            icon={ShoppingBasket}
+            iconTone="blue"
+            title="No shopping list yet"
+            body="Plan meals for the week and we’ll build a store-sorted list from your recipes."
+            actions={[
+              { label: "Go to Today", href: "/" },
+              { label: "Browse recipes", href: "/recipes", variant: "secondary" },
+            ]}
+            tip="Create a batch from any recipe to generate your first list."
+          />
         ) : (
           <div className="space-y-4">
             {groups.map((group) =>
@@ -237,10 +249,6 @@ export function ShopTabClient({
               </Button>
             )}
 
-            {buyMessage && (
-              <p className="text-center text-sm text-[var(--muted)]">{buyMessage}</p>
-            )}
-
             {batchId && (
               <Link
                 href={`/batches/${batchId}`}
@@ -254,5 +262,6 @@ export function ShopTabClient({
         )}
       </section>
     </div>
+    </PullToRefresh>
   );
 }

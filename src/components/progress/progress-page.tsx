@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Flame, Lock, Trophy } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { CountUp } from "@/components/motion/count-up";
 import type { ProgressStats } from "@/lib/progress/stats";
 
@@ -10,6 +11,7 @@ const DAY_LABELS = ["W", "T", "F", "S", "S", "M", "T"];
 
 export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
   const maxTrend = Math.max(...stats.scoreTrend, 1);
+  const earnedCount = stats.milestones.filter((m) => m.earned).length;
 
   return (
     <div className="mx-auto max-w-[430px] space-y-6 pb-4">
@@ -69,7 +71,7 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
             {stats.scoreTrend.map((score, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-1">
                 <div
-                  className="w-full max-w-[28px] rounded-t-md bg-[var(--success)]"
+                  className="progress-bar-fill w-full max-w-[28px] rounded-t-md bg-[var(--success)]"
                   style={{ height: `${Math.max(8, (score / maxTrend) * 72)}px` }}
                 />
                 <span className="text-[10px] text-[var(--muted)]">{DAY_LABELS[i]}</span>
@@ -81,6 +83,16 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
 
       <section>
         <h2 className="mb-3 text-base font-semibold text-[var(--foreground)]">Milestones</h2>
+        {earnedCount === 0 ? (
+          <EmptyState
+            icon={Trophy}
+            iconTone="amber"
+            title="Milestones await"
+            body="Log meals consistently — unlock streak badges, protein goals, and score achievements along the way."
+            actions={[{ label: "Back to Today", href: "/" }]}
+            tip="Your first milestone unlocks at a 10-day streak."
+          />
+        ) : (
         <div className="flex justify-between gap-2">
           {stats.milestones.map((m) => (
             <div key={m.id} className="flex flex-1 flex-col items-center gap-2 text-center">
@@ -109,6 +121,7 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
             </div>
           ))}
         </div>
+        )}
       </section>
     </div>
   );

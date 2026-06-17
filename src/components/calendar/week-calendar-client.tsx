@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
+  CalendarDays,
   ChefHat,
   ChevronLeft,
   ChevronRight,
@@ -15,8 +16,12 @@ import { CatchUpBanner } from "@/components/log/catch-up-client";
 import { MealStatusTag } from "@/components/calendar/meal-status-tag";
 import { ProgressStrip } from "@/components/today/progress-strip";
 import { CountUp } from "@/components/motion/count-up";
+import { PullToRefresh } from "@/components/motion/pull-to-refresh";
 import { StaggerEntrance } from "@/components/motion/stagger-entrance";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SwipeRow } from "@/components/ui/swipe-row";
+import { WeekCalendarSkeleton } from "@/components/ui/skeleton";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
 import { formatDayHeader, startOfWeek } from "@/lib/calendar/week";
 import {
@@ -105,6 +110,14 @@ export function WeekCalendarClient({
       .sort(([a], [b]) => a.localeCompare(b));
   }, [data]);
 
+  async function deleteEntry(id: number) {
+    const res = await fetch(`/api/log/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      load();
+      router.refresh();
+    }
+  }
+
   async function markEaten(id: number, date: string) {
     setMarkingId(id);
     const before = await captureLogRewardContext(date);
@@ -148,6 +161,7 @@ export function WeekCalendarClient({
   })();
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div className="mx-auto max-w-[430px] space-y-5">
       <header className="flex items-start justify-between gap-3">
         <div>
@@ -296,11 +310,21 @@ export function WeekCalendarClient({
 
       <section className="space-y-4">
         {loading || !data ? (
-          <p className="text-sm text-[var(--muted)]">Loading week…</p>
+          <WeekCalendarSkeleton />
         ) : daysWithEntries.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] px-4 py-8 text-center text-sm text-[var(--muted)] shadow-[var(--shadow-sm)]">
-            No meals this week yet. Add one for any day.
-          </p>
+          <EmptyState
+            icon={CalendarDays}
+            iconTone="mint"
+            title="Nothing planned yet"
+            body="Log what you eat or plan ahead — your week fills in here and shopping lists build themselves."
+            actions={[
+              {
+                label: "Add a meal",
+                onClick: () => router.push(`/log?date=${selectedDate}`),
+              },
+              { label: "Browse recipes", href: "/recipes", variant: "secondary" },
+            ]}
+          />
         ) : (
           daysWithEntries.map(([date, entries]) => {
             const hasPlanned = entries.some((e) => e.status === "planned");
@@ -325,6 +349,7 @@ export function WeekCalendarClient({
                           entry={entry}
                           marking={markingId === entry.id}
                           onMarkEaten={() => markEaten(entry.id, entry.date)}
+                          onDelete={() => deleteEntry(entry.id)}
                         />
                       )),
                   )}
@@ -336,6 +361,7 @@ export function WeekCalendarClient({
                         entry={entry}
                         marking={markingId === entry.id}
                         onMarkEaten={() => markEaten(entry.id, entry.date)}
+                        onDelete={() => deleteEntry(entry.id)}
                       />
                     ))}
                 </div>
@@ -368,6 +394,7 @@ export function WeekCalendarClient({
         )}
       </div>
     </div>
+    </PullToRefresh>
   );
 }
 
@@ -375,15 +402,19 @@ function MealEntryRow({
   entry,
   marking,
   onMarkEaten,
+  onDelete,
 }: {
   entry: WeekEntry;
   marking: boolean;
   onMarkEaten: () => void;
+  onDelete: () => void;
 }) {
+  const router = useRouter();
   const isPlanned = entry.status === "planned";
   const href = entry.recipeId ? `/recipes/${entry.recipeId}` : undefined;
+  const canSwipe = !isPlanned;
 
-  const inner = (
+  const content = (
     <>
       <RecipeIcon index={entry.accentIndex} />
       <div className="min-w-0 flex-1">
@@ -404,9 +435,9 @@ function MealEntryRow({
     </>
   );
 
-  return (
+  const row = (
     <div
-      className={`flex items-center gap-3 rounded-[var(--radius-card)] px-3.5 py-3 shadow-[var(--shadow-sm)] ${
+      className={`flex items-center gap-3 px-3.5 py-3 ${
         isPlanned
           ? "border border-dashed border-[#534ab7]/40 bg-[var(--purple-soft)]/40"
           : "border border-[var(--border)] bg-[var(--surface)]"
@@ -414,10 +445,10 @@ function MealEntryRow({
     >
       {href ? (
         <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-          {inner}
+          {content}
         </Link>
       ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-3">{inner}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-3">{content}</div>
       )}
       {isPlanned && (
         <button
@@ -430,5 +461,25 @@ function MealEntryRow({
         </button>
       )}
     </div>
+  );
+
+  if (!canSwipe) {
+    return (
+      <div className="rounded-[var(--radius-card)] shadow-[var(--shadow-sm)]">{row}</div>
+    );
+  }
+
+  return (
+    <SwipeRow
+      className="shadow-[var(--shadow-sm)]"
+      actions={[
+        ...(href
+          ? [{ label: "Open", onClick: () => router.push(href), tone: "edit" as const }]
+          : []),
+        { label: "Delete", onClick: onDelete, tone: "delete" as const },
+      ]}
+    >
+      {row}
+    </SwipeRow>
   );
 }
