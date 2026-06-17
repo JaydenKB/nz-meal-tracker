@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Flame, Lock, Trophy } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
+import { CountUp } from "@/components/motion/count-up";
 import type { ProgressStats } from "@/lib/progress/stats";
 
 const DAY_LABELS = ["W", "T", "F", "S", "S", "M", "T"];
@@ -15,21 +16,26 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
       <header className="flex items-center gap-3">
         <Link
           href="/"
-          className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white text-[var(--foreground)]"
+          className="pressable flex h-10 w-10 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-sm)]"
           aria-label="Back"
         >
           <ArrowLeft className="h-5 w-5" strokeWidth={1.75} />
         </Link>
-        <h1 className="text-[1.75rem] font-medium text-[var(--foreground)]">Your progress</h1>
+        <h1 className="text-[var(--text-display)] font-semibold text-[var(--foreground)]">
+          Your progress
+        </h1>
       </header>
 
-      <div className="rounded-[var(--radius-card)] bg-[var(--streak)] px-6 py-8 text-center text-white">
+      <div className="rounded-[var(--radius-card)] px-6 py-8 text-center text-white shadow-[var(--shadow-md)] [background-image:var(--streak-gradient)]">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
           <Flame className="h-7 w-7" strokeWidth={2} />
         </div>
-        <p className="text-4xl font-medium leading-none">{stats.streakDays} days</p>
+        <p className="text-4xl font-semibold leading-none">
+          <CountUp value={stats.streakDays} /> days
+        </p>
         <p className="mt-2 text-sm font-normal opacity-90">
-          streak · best {stats.bestStreakDays}
+          streak · best{" "}
+          <CountUp value={stats.bestStreakDays} />
         </p>
       </div>
 
@@ -37,7 +43,7 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
         <StatCard
           tone="green"
           label="Avg score"
-          value={stats.avgHealthScore}
+          value={<CountUp value={stats.avgHealthScore} />}
           sub={
             stats.scoreDelta !== 0 && (
               <span className="text-[var(--success)]">
@@ -55,10 +61,10 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
       </div>
 
       <section>
-        <h2 className="mb-3 text-base font-medium text-[var(--foreground)]">
+        <h2 className="mb-3 text-base font-semibold text-[var(--foreground)]">
           Score · last 7 days
         </h2>
-        <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--beige)] px-4 py-5">
+        <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--beige)] px-4 py-5 shadow-[var(--shadow-sm)]">
           <div className="flex h-24 items-end justify-between gap-1">
             {stats.scoreTrend.map((score, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-1">
@@ -74,7 +80,7 @@ export function ProgressPageClient({ stats }: { stats: ProgressStats }) {
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-medium text-[var(--foreground)]">Milestones</h2>
+        <h2 className="mb-3 text-base font-semibold text-[var(--foreground)]">Milestones</h2>
         <div className="flex justify-between gap-2">
           {stats.milestones.map((m) => (
             <div key={m.id} className="flex flex-1 flex-col items-center gap-2 text-center">

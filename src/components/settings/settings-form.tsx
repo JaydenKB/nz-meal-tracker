@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -609,21 +610,11 @@ export function SettingsForm({ layout = "default" }: { layout?: "default" | "gro
         <SettingsSection title="Preferences">
           <div className="flex items-center justify-between border-b border-[var(--border)] bg-white px-4 py-3.5">
             <span className="text-sm text-[var(--foreground)]">Sound effects</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={soundOn}
-              onClick={toggleSound}
-              className={`relative h-7 w-12 rounded-full transition-colors ${
-                soundOn ? "bg-[var(--primary)]" : "bg-[var(--beige)]"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                  soundOn ? "left-[22px]" : "left-0.5"
-                }`}
-              />
-            </button>
+            <ToggleSwitch
+              checked={soundOn}
+              onChange={toggleSound}
+              label="Sound effects"
+            />
           </div>
           <SfxPreview enabled={soundOn} />
           <button

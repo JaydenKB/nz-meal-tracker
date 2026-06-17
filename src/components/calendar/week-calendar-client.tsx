@@ -14,6 +14,8 @@ import {
 import { CatchUpBanner } from "@/components/log/catch-up-client";
 import { MealStatusTag } from "@/components/calendar/meal-status-tag";
 import { ProgressStrip } from "@/components/today/progress-strip";
+import { CountUp } from "@/components/motion/count-up";
+import { StaggerEntrance } from "@/components/motion/stagger-entrance";
 import { Button } from "@/components/ui/button";
 import { RecipeIcon } from "@/components/ui/recipe-icon";
 import { formatDayHeader, startOfWeek } from "@/lib/calendar/week";
@@ -138,11 +140,19 @@ export function WeekCalendarClient({
       ?.filter((e) => e.status === "eaten")
       .reduce((s, e) => s + e.macros.calories, 0) ?? 0;
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
+
   return (
     <div className="mx-auto max-w-[430px] space-y-5">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-[1.65rem] font-medium text-[var(--foreground)]">This week</h1>
+          <p className="text-sm text-[var(--muted)]">{greeting} 👋</p>
+          <h1 className="text-[1.65rem] font-semibold text-[var(--foreground)]">This week</h1>
           {data && (
             <p className="mt-0.5 text-sm text-[var(--muted)]">{data.weekLabel}</p>
           )}
@@ -151,7 +161,7 @@ export function WeekCalendarClient({
           <button
             type="button"
             onClick={goPrevWeek}
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)]"
             aria-label="Previous week"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -159,14 +169,14 @@ export function WeekCalendarClient({
           <button
             type="button"
             onClick={goNextWeek}
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)]"
             aria-label="Next week"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
           <Link
             href={`/week/summary?weekStart=${weekStart}`}
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white text-[var(--foreground)]"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-sm)]"
             aria-label="Week summary"
           >
             <BarChart3 className="h-4 w-4" />
@@ -188,7 +198,7 @@ export function WeekCalendarClient({
       {cookNowCount > 0 && (
         <Link
           href="/recipes/cook-from-pantry"
-          className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--green-soft)] px-4 py-3"
+          className="pressable flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--green-soft)] px-4 py-3 shadow-[var(--shadow-sm)]"
         >
           <ChefHat className="h-5 w-5 shrink-0 text-[var(--primary)]" strokeWidth={2} />
           <p className="text-sm font-medium text-[var(--foreground)]">
@@ -204,10 +214,10 @@ export function WeekCalendarClient({
               key={day.date}
               type="button"
               onClick={() => setSelectedDate(day.date)}
-              className={`flex min-w-[3rem] flex-col items-center rounded-[var(--radius-card)] px-2 py-2 text-center transition-colors ${
+              className={`pressable flex min-w-[3rem] flex-col items-center rounded-[var(--radius-card)] px-2 py-2 text-center transition-colors ${
                 day.isSelected
-                  ? "bg-[var(--primary)] text-white"
-                  : "border border-[var(--border)] bg-white text-[var(--foreground)]"
+                  ? "bg-[var(--primary)] text-white shadow-[var(--shadow-sm)] [background-image:var(--primary-gradient)]"
+                  : "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-sm)]"
               }`}
             >
               <span className="text-[10px] font-medium uppercase">{day.shortLabel}</span>
@@ -217,7 +227,7 @@ export function WeekCalendarClient({
           <button
             type="button"
             onClick={goToday}
-            className="shrink-0 self-center rounded-[var(--radius-pill)] border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--muted)]"
+            className="pressable shrink-0 self-center rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs text-[var(--muted)] shadow-[var(--shadow-sm)]"
           >
             Today
           </button>
@@ -225,25 +235,44 @@ export function WeekCalendarClient({
       )}
 
       {data && !loading && (
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--green-soft)] px-3.5 py-3">
+        <StaggerEntrance className="grid grid-cols-2 gap-2.5">
+          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--green-soft)] px-3.5 py-3 shadow-[var(--shadow-sm)]">
             <p className="text-xs font-medium text-[var(--primary)]">Avg / day</p>
-            <p className="mt-0.5 text-xl font-medium text-[var(--foreground)]">
-              {Math.round(data.macroStats.combined.avgPerDay.calories)} kcal
+            <p className="mt-0.5 text-xl font-semibold text-[var(--foreground)]">
+              <CountUp
+                value={data.macroStats.combined.avgPerDay.calories}
+                format={(n) => `${Math.round(n)} kcal`}
+              />
             </p>
             <p className="mt-1 text-xs text-[var(--muted)]">
-              P {Math.round(data.macroStats.combined.avgPerDay.proteinG)} · F{" "}
-              {Math.round(data.macroStats.combined.avgPerDay.fatG)} · C{" "}
-              {Math.round(data.macroStats.combined.avgPerDay.carbsG)}
+              P{" "}
+              <CountUp
+                value={data.macroStats.combined.avgPerDay.proteinG}
+                format={(n) => String(Math.round(n))}
+              />{" "}
+              · F{" "}
+              <CountUp
+                value={data.macroStats.combined.avgPerDay.fatG}
+                format={(n) => String(Math.round(n))}
+              />{" "}
+              · C{" "}
+              <CountUp
+                value={data.macroStats.combined.avgPerDay.carbsG}
+                format={(n) => String(Math.round(n))}
+              />
             </p>
             <p className="mt-1.5 text-[10px] leading-snug text-[var(--muted)]">
               {data.macroStats.combined.label}
             </p>
             <p className="mt-1 text-[10px] text-[var(--muted)]">
-              Eaten only: {Math.round(data.macroStats.eatenOnly.avgPerDay.calories)} kcal/day
+              Eaten only:{" "}
+              <CountUp
+                value={data.macroStats.eatenOnly.avgPerDay.calories}
+                format={(n) => `${Math.round(n)} kcal/day`}
+              />
             </p>
           </div>
-          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--blue-soft)] px-3.5 py-3">
+          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--blue-soft)] px-3.5 py-3 shadow-[var(--shadow-sm)]">
             <p className="text-xs font-medium text-[#2d6a9f]">Week cost</p>
             <p className="mt-0.5 text-xl font-medium text-[var(--foreground)]">
               {data.costStats.weekTotal != null
@@ -262,14 +291,14 @@ export function WeekCalendarClient({
               </p>
             )}
           </div>
-        </div>
+        </StaggerEntrance>
       )}
 
       <section className="space-y-4">
         {loading || !data ? (
           <p className="text-sm text-[var(--muted)]">Loading week…</p>
         ) : daysWithEntries.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white px-4 py-8 text-center text-sm text-[var(--muted)]">
+          <p className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] px-4 py-8 text-center text-sm text-[var(--muted)] shadow-[var(--shadow-sm)]">
             No meals this week yet. Add one for any day.
           </p>
         ) : (
@@ -377,10 +406,10 @@ function MealEntryRow({
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-[var(--radius-card)] px-3.5 py-3 ${
+      className={`flex items-center gap-3 rounded-[var(--radius-card)] px-3.5 py-3 shadow-[var(--shadow-sm)] ${
         isPlanned
           ? "border border-dashed border-[#534ab7]/40 bg-[var(--purple-soft)]/40"
-          : "border border-[var(--border)] bg-white"
+          : "border border-[var(--border)] bg-[var(--surface)]"
       }`}
     >
       {href ? (
@@ -395,7 +424,7 @@ function MealEntryRow({
           type="button"
           disabled={marking}
           onClick={onMarkEaten}
-          className="shrink-0 rounded-[var(--radius-pill)] border border-[var(--primary)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--primary)] disabled:opacity-50"
+          className="pressable shrink-0 rounded-[var(--radius-pill)] border border-[var(--primary)] bg-[var(--surface)] px-2.5 py-1 text-xs font-medium text-[var(--primary)] disabled:opacity-50"
         >
           {marking ? "…" : "Mark eaten"}
         </button>

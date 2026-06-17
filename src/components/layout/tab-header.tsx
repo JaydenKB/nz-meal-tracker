@@ -16,12 +16,12 @@ export function TabHeader({ title, subtitle, backHref, backLabel, action }: TabH
         {backHref && (
           <Link
             href={backHref}
-            className="mb-1 inline-block text-sm font-medium text-[var(--primary)]"
+            className="pressable mb-1 inline-block text-sm font-medium text-[var(--primary)]"
           >
             ← {backLabel ?? "Back"}
           </Link>
         )}
-        <h1 className="text-[1.75rem] font-medium leading-tight tracking-tight text-[var(--foreground)]">
+        <h1 className="text-[var(--text-display)] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
           {title}
         </h1>
         {subtitle && (
@@ -32,7 +32,7 @@ export function TabHeader({ title, subtitle, backHref, backLabel, action }: TabH
         {action}
         <Link
           href="/settings"
-          className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white text-[var(--foreground)]"
+          className="pressable flex h-11 w-11 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-sm)]"
           aria-label="Settings"
         >
           <Settings className="h-5 w-5" strokeWidth={1.75} />

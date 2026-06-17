@@ -1,6 +1,7 @@
 "use client";
 
 import { useShowBottomNav } from "@/components/layout/bottom-nav";
+import { PageTransition } from "@/components/motion/page-transition";
 import { cn } from "@/lib/utils";
 
 export function MainShell({ children }: { children: React.ReactNode }) {
@@ -13,7 +14,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         showNav ? "app-main" : "app-main-no-nav",
       )}
     >
-      {children}
+      <PageTransition>{children}</PageTransition>
     </main>
   );
 }

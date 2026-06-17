@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
 import { mealTypeFromTime } from "@/lib/log/mealTime";
 import { logMealWithRewards } from "@/lib/sfx/log-rewards";
 import { play } from "@/lib/sfx";
 import { todayString } from "@/lib/log/compute";
-import { cn } from "@/lib/utils";
+import { LogActionButton } from "@/components/ui/log-action-button";
 
 export function QuickLogButton({
   recipeId,
@@ -17,15 +15,7 @@ export function QuickLogButton({
   className?: string;
   onLogged?: () => void;
 }) {
-  const [popping, setPopping] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  async function handleLog(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (busy) return;
-    setBusy(true);
-
+  async function handleLog(): Promise<boolean> {
     const date = todayString();
     const res = await logMealWithRewards(date, "eaten", () =>
       fetch("/api/log", {
@@ -43,28 +33,17 @@ export function QuickLogButton({
 
     if (!res.ok) {
       play("error");
-      setBusy(false);
-      return;
+      return false;
     }
-    setPopping(true);
-    setTimeout(() => setPopping(false), 350);
-    setBusy(false);
     onLogged?.();
+    return true;
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleLog}
-      disabled={busy}
-      aria-label="Log this meal"
-      className={cn(
-        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-transform disabled:opacity-60",
-        popping && "log-pop",
-        className,
-      )}
-    >
-      <Plus className="h-5 w-5" strokeWidth={2.5} />
-    </button>
+    <LogActionButton
+      onLog={handleLog}
+      className={className}
+      label="Log this meal"
+    />
   );
 }

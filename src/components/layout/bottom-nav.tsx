@@ -24,7 +24,7 @@ export function BottomNav() {
   if (!TAB_ROOTS.has(pathname)) return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-white pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-[var(--surface)] pb-[env(safe-area-inset-bottom)] shadow-[var(--shadow-sm)]">
       <div className="mx-auto flex max-w-[430px] items-stretch justify-around px-2 pt-2">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active =
@@ -37,7 +37,7 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius)] py-2 transition-colors",
+                "pressable flex flex-1 flex-col items-center gap-0.5 rounded-[var(--radius)] py-2 transition-colors",
                 active ? "text-[var(--primary)]" : "text-[var(--muted)]",
               )}
             >

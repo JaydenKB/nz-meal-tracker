@@ -18,11 +18,11 @@ export function Pill({
   disabled,
 }: PillProps) {
   const base =
-    "inline-flex items-center justify-center rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium transition-colors";
+    "pressable inline-flex items-center justify-center rounded-[var(--radius-pill)] px-4 py-2 text-sm font-medium transition-colors";
 
   const styles = {
     default: active
-      ? "bg-[var(--primary)] text-white"
+      ? "bg-[var(--primary)] text-white [background-image:var(--primary-gradient)]"
       : "bg-[var(--beige)] text-[var(--foreground)]",
     ai: active
       ? "bg-[var(--ai)] text-white"

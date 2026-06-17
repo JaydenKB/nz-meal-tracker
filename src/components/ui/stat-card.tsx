@@ -19,7 +19,7 @@ export function StatCard({ label, value, sub, tone = "default", className }: Sta
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-card)] border border-[var(--border)] px-4 py-4",
+        "rounded-[var(--radius-card)] border border-[var(--border)] px-4 py-4 shadow-[var(--shadow-sm)]",
         tones[tone],
         className,
       )}

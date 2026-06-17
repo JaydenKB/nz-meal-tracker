@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Search, X } from "lucide-react";
+import { LogActionButton } from "@/components/ui/log-action-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill } from "@/components/ui/pill";
@@ -85,8 +86,8 @@ export function LogPickerClient() {
   }, [filter, query, recipes, ingredients]);
 
   const logItem = useCallback(
-    async (item: PickerItem) => {
-      if (busy) return;
+    async (item: PickerItem): Promise<boolean> => {
+      if (busy) return false;
       setBusy(true);
 
       const body: Record<string, unknown> = {
@@ -109,11 +110,14 @@ export function LogPickerClient() {
       if (!res.ok) {
         play("error");
         setBusy(false);
-        return;
+        return false;
       }
       setBusy(false);
-      router.push("/");
-      router.refresh();
+      window.setTimeout(() => {
+        router.push("/");
+        router.refresh();
+      }, 400);
+      return true;
     },
     [busy, filter, logDate, mealType, router, servings, status],
   );
@@ -121,10 +125,10 @@ export function LogPickerClient() {
   return (
     <div className="mx-auto max-w-[430px] space-y-5 pb-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-[1.75rem] font-medium text-[var(--foreground)]">Log a meal</h1>
+        <h1 className="text-[var(--text-display)] font-semibold text-[var(--foreground)]">Log a meal</h1>
         <Link
           href="/"
-          className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-white text-[var(--foreground)]"
+          className="pressable flex h-10 w-10 items-center justify-center rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-sm)]"
           aria-label="Close"
         >
           <X className="h-5 w-5" strokeWidth={1.75} />
@@ -142,7 +146,7 @@ export function LogPickerClient() {
         <button
           type="button"
           onClick={() => setLogDate((d) => shiftDate(d, -1))}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white"
+          className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
           aria-label="Previous day"
         >
           <Minus className="h-4 w-4" />
@@ -154,7 +158,7 @@ export function LogPickerClient() {
         <button
           type="button"
           onClick={() => setLogDate((d) => shiftDate(d, 1))}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white"
+          className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)]"
           aria-label="Next day"
         >
           <Plus className="h-4 w-4" />
@@ -231,7 +235,7 @@ export function LogPickerClient() {
           {items.map((item, idx) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-white px-3.5 py-3"
+              className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--surface)] px-3.5 py-3 shadow-[var(--shadow-sm)]"
             >
               <RecipeIcon index={item.accentIndex ?? idx} />
               <div className="min-w-0 flex-1">
@@ -256,15 +260,11 @@ export function LogPickerClient() {
               {filter === "recipes" && item.score != null && item.score > 0 && (
                 <HealthScoreBadgeLink recipeId={item.id} score={item.score} size="sm" />
               )}
-              <button
-                type="button"
+              <LogActionButton
+                onLog={() => logItem(item)}
                 disabled={busy}
-                onClick={() => logItem(item)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-white disabled:opacity-50"
-                aria-label={`Add ${item.name}`}
-              >
-                <Plus className="h-5 w-5" strokeWidth={2.5} />
-              </button>
+                label={`Add ${item.name}`}
+              />
             </div>
           ))}
         </div>
@@ -276,7 +276,7 @@ export function LogPickerClient() {
           <button
             type="button"
             onClick={() => setServings((s) => Math.max(0.5, s - 0.5))}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--foreground)]"
+            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
           >
             <Minus className="h-4 w-4" />
           </button>
@@ -284,7 +284,7 @@ export function LogPickerClient() {
           <button
             type="button"
             onClick={() => setServings((s) => s + 0.5)}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white text-[var(--foreground)]"
+            className="pressable flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)]"
           >
             <Plus className="h-4 w-4" />
           </button>
